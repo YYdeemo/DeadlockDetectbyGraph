@@ -2,6 +2,9 @@ package syntax;
 
 import Enum.*;
 
+/**
+ *
+ */
 public class Operation {
     short index;//index in execution
     short indx;//index in process
