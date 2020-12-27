@@ -15,16 +15,17 @@ import java.util.LinkedList;
 *       wait 2 0 0
 *       barr 3 0 0
 *
-* add the wait to the file
+* add the wait to the ctp, and save as a new file which is named as *_cpm.txt
 * if receive is blocking ,then we need to add the nearliest wait
 * if send is blocking and is synchronized or ready, then we need to add the nearliest wait
 *
  */
 public class CmpFile {
 
-    public static LinkedList<String[]> CompleteCTPfromFile(String filepath){
+    public static LinkedList<String[]> CompleteCTPFromFile(String filepath){
         LinkedList<String[]> ctp = new LinkedList<>();
         try{
+            //read the ctp from the file with filepath
             BufferedReader reader = new BufferedReader(new FileReader(filepath));
             String actionInfo;//the each line is an action
             int count = 0;
@@ -43,14 +44,16 @@ public class CmpFile {
                 }
                 count++;
                 if(ctp.getLast()[0].matches("r|ss|rs")){
+                    //if the last action is bllocking recv or ready/synchronized send, then we add the nearliest wait for them.
                     String[] a_blocking = ctp.getLast();
+                    //add the wait is "w count a'processid a.id"
                     String[] new_wait = {"w",String.valueOf(count),a_blocking[2],a_blocking[1]};
                     ctp.addLast(new_wait);
                     count++;
                     hasBlocking = true;
                 }
             }
-            reader.close();
+            reader.close();//close the buffered reader
         }catch (IOException error){
             System.out.println(error.toString());
         }
@@ -61,7 +64,7 @@ public class CmpFile {
     public static void WriteCTPtoFile(LinkedList<String[]> ctp, String filepath){
         try {
             FileWriter fwriter = new FileWriter(filepath.replaceAll(".txt", "_cmp.txt"));
-            //
+            //get the completed ctp from above function, then write it to the new file with same format
             BufferedWriter bwriter = new BufferedWriter(fwriter);
             for (String[] action : ctp) {
                 String actionStr = "";
@@ -82,7 +85,7 @@ public class CmpFile {
     //TEST
     public static void main(String[] args){
         String filepath = "./src/test/test_ctp.txt";
-        LinkedList<String[]> ctp = CompleteCTPfromFile(filepath);
+        LinkedList<String[]> ctp = CompleteCTPFromFile(filepath);
         WriteCTPtoFile(ctp,filepath);
         System.out.println(ctp.size());
     }
