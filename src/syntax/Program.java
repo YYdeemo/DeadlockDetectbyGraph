@@ -4,9 +4,7 @@ import constant.OPTypeEnum;
 import prework.CmpFile;
 import sun.awt.image.ImageWatched;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.ListIterator;
+import java.util.*;
 
 /*
 * a mpi program has n processes and each process has some actions
@@ -18,18 +16,22 @@ import java.util.ListIterator;
 *       3.construct the partial order based on happens-before relation
  */
 public class Program {
-    ArrayList<Process> processArrayList;
-    MatchPairs matchPairs;
-    HBRelations hbRelations;
+    public int size;//the count of processes
+    public ArrayList<Process> processArrayList;
+    public Hashtable<Operation, LinkedList<Operation>> matchTables;
+    public Hashtable<Operation, Set<Operation>> HBTables;
 
     public Program(String filepath){
         //初始化variables！！！
         processArrayList = new ArrayList<>();
         initializeProgramFromCTP(filepath);
+        cmpOPsInfo();
+        size = processArrayList.size();
+        matchTables = MatchPairs.overApproximateMatchs(this);
     }
     /*
     *from the file, we create the operations, add them to the process, and add the process to the program
-    *
+    *param: filepath
      */
     private void initializeProgramFromCTP(String filepath){
         LinkedList<String[]> ctp = CmpFile.getCTPFromFile(filepath);
@@ -62,6 +64,21 @@ public class Program {
                     operation.req = process.ops.get(operation.reqID);
                     process.ops.get(operation.reqID).Nearstwait = operation;
                 }
+                if(operation.isRecv()){
+                    operation.rank = process.rlist.indexOf(operation);
+                }
+                if(operation.isSend()){
+                    operation.rank = process.slist.indexOf(operation);
+                }
+            }
+        }
+    }
+
+    public void printMatchPairs(){
+        System.out.println("MATCH PAIRS IS SHOWN AS FOLLOWING :");
+        for(Operation R : matchTables.keySet()){
+            for (Operation S : matchTables.get(R)){
+                System.out.println("<R"+R.index+", S"+S.index+">");
             }
         }
     }
@@ -73,6 +90,7 @@ public class Program {
         for(Process process : program.processArrayList){
             process.printProcessInfo();
         }
+        program.printMatchPairs();
     }
 
 }

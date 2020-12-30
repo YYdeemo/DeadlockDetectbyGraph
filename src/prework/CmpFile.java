@@ -112,57 +112,57 @@ public class CmpFile {
             switch (aStr[0]){
                 case "r":
                     operation = new Operation(OPTypeEnum.RECV,//type
-                            Short.parseShort(aStr[1]),//idx
-                            Short.parseShort(aStr[2]),//proc
-                            Short.parseShort(aStr[3]),//src
-                            Short.parseShort(aStr[4]),//dst
-                            Constants.defultShort,//tag
-                            Constants.defultShort,//group
-                            Constants.defultShort//reqID
+                            Integer.parseInt(aStr[1]),//idx
+                            Integer.parseInt(aStr[2]),//proc
+                            Integer.parseInt(aStr[3]),//src
+                            Integer.parseInt(aStr[4]),//dst
+                            Constants.defultInt,//tag
+                            Constants.defultInt,//group
+                            Constants.defultInt//reqID
                             );
                     break;
                 case "s":
                     operation = new Operation(OPTypeEnum.SEND,//type
-                            Short.parseShort(aStr[1]),//idx
-                            Short.parseShort(aStr[2]),//proc
-                            Short.parseShort(aStr[3]),//src
-                            Short.parseShort(aStr[4]),//dst
-                            Constants.defultShort,//tag
-                            Constants.defultShort,//group
-                            Constants.defultShort//reqID
+                            Integer.parseInt(aStr[1]),//idx
+                            Integer.parseInt(aStr[2]),//proc
+                            Integer.parseInt(aStr[3]),//src
+                            Integer.parseInt(aStr[4]),//dst
+                            Constants.defultInt,//tag
+                            Constants.defultInt,//group
+                            Constants.defultInt//reqID
                     );
                     break;
                 case "ss":
                     operation = new Operation(OPTypeEnum.SYCHRONIZED_SEND,//type
-                            Short.parseShort(aStr[1]),//idx
-                            Short.parseShort(aStr[2]),//proc
-                            Short.parseShort(aStr[3]),//src
-                            Short.parseShort(aStr[4]),//dst
-                            Constants.defultShort,//tag
-                            Constants.defultShort,//group
-                            Constants.defultShort//reqID
+                            Integer.parseInt(aStr[1]),//idx
+                            Integer.parseInt(aStr[2]),//proc
+                            Integer.parseInt(aStr[3]),//src
+                            Integer.parseInt(aStr[4]),//dst
+                            Constants.defultInt,//tag
+                            Constants.defultInt,//group
+                            Constants.defultInt//reqID
                     );
                     break;
                 case "w":
                     operation = new Operation(OPTypeEnum.WAIT,//type
-                            Short.parseShort(aStr[1]),//idx
-                            Short.parseShort(aStr[2]),//proc
-                            Constants.defultShort,//src
-                            Constants.defultShort,//dst
-                            Constants.defultShort,//tag
-                            Constants.defultShort,//group
-                            Short.parseShort(aStr[3])//the req action's Idx
+                            Integer.parseInt(aStr[1]),//idx
+                            Integer.parseInt(aStr[2]),//proc
+                            Constants.defultInt,//src
+                            Constants.defultInt,//dst
+                            Constants.defultInt,//tag
+                            Constants.defultInt,//group
+                            Integer.parseInt(aStr[3])//the req action's Idx
                     );
                     break;
                 case "b":
                     operation = new Operation(OPTypeEnum.BARRIER,//type
-                            Short.parseShort(aStr[1]),//idx
-                            Short.parseShort(aStr[2]),//proc
-                            Constants.defultShort,//src
-                            Constants.defultShort,//dst
-                            Constants.defultShort,//tag
-                            Short.parseShort(aStr[3]),//group
-                            Constants.defultShort//reqID
+                            Integer.parseInt(aStr[1]),//idx
+                            Integer.parseInt(aStr[2]),//proc
+                            Constants.defultInt,//src
+                            Constants.defultInt,//dst
+                            Constants.defultInt,//tag
+                            Integer.parseInt(aStr[3]),//group
+                            Constants.defultInt//reqID
                     );
                     break;
             }

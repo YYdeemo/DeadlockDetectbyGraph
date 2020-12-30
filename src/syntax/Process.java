@@ -5,12 +5,12 @@ import constant.OPTypeEnum;
 import java.util.LinkedList;
 
 public class Process {
-    short rank;
+    int rank;
     public LinkedList<Operation> ops;
     public LinkedList<Operation> rlist;
     public LinkedList<Operation> slist;
 
-    public Process(short rank){
+    public Process(int rank){
         ops = new LinkedList<>();
         rlist = new LinkedList<>();
         slist = new LinkedList<>();
@@ -19,9 +19,9 @@ public class Process {
 
     public void append(Operation operation){
         ops.add(operation);
-        if(operation.type==OPTypeEnum.RECV)
+        if(operation.isRecv())
             appendToRList(operation);
-        if(operation.type==OPTypeEnum.SEND||operation.type==OPTypeEnum.SYCHRONIZED_SEND)
+        if(operation.isSend())
             appendToSList(operation);
     }
 
@@ -31,6 +31,10 @@ public class Process {
 
     public void appendToSList(Operation operation){
         slist.add(operation);
+    }
+
+    public Operation getOP(int index){
+        return ops.get(index);
     }
 
     public void printProcessInfo(){
