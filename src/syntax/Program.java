@@ -19,7 +19,7 @@ public class Program {
     public int size;//the count of processes
     public ArrayList<Process> processArrayList;
     public Hashtable<Operation, LinkedList<Operation>> matchTables;
-    public Hashtable<Operation, Set<Operation>> HBTables;
+    public Hashtable<Operation, LinkedList<Operation>> HBTables;
 
     public Program(String filepath){
         //初始化variables！！！
@@ -28,6 +28,7 @@ public class Program {
         cmpOPsInfo();
         size = processArrayList.size();
         matchTables = MatchPairs.overApproximateMatchs(this);
+        HBTables = HBRelations.generatHBRelations(this);
     }
     /*
     *from the file, we create the operations, add them to the process, and add the process to the program
