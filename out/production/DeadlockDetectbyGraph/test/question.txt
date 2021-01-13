@@ -1,0 +1,5 @@
+Questions:
+
+1.原来的代码中wait是只是等待一个non-blocking的recv或者send；但现在论文中的意思是一个blocking的recv或者send；我们可以用一个non-b1ocking的
+recv或者send加一个紧跟着的wait来实现，那么在代码中所有的recv或者send；我们都视为non-blocking吗？
+2.r <HB w； where the w's req is the r ;这个recv和wait之间的happens before的关系需要添加吗？（原方法中没有）
