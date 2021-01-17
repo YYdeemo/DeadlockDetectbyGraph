@@ -31,6 +31,12 @@ public class Operation {
         this.reqID = reqID;
         Nearstwait = null;
     }
+
+    public Operation(OPTypeEnum type, int index, int proc){
+        this.type = type;
+        this.index = index;
+        this.proc = proc;
+    }
     //log the information of this operation by...
     public void logOPInfo(){
 

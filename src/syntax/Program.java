@@ -2,7 +2,7 @@ package syntax;
 
 import constant.OPTypeEnum;
 import prework.CmpFile;
-import sun.awt.image.ImageWatched;
+import java.util.LinkedList;
 
 import java.util.*;
 
@@ -19,7 +19,7 @@ public class Program {
     public int size;//the count of processes
     public ArrayList<Process> processArrayList;
     public Hashtable<Operation, LinkedList<Operation>> matchTables;
-    public Hashtable<Operation, LinkedList<Operation>> HBTables;
+    public Hashtable<Operation, Set<Operation>> HBTables;
 
     public Program(String filepath){
         //初始化variables！！！

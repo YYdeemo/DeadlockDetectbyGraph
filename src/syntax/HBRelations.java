@@ -2,13 +2,14 @@ package syntax;
 
 import constant.OPTypeEnum;
 
+import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.LinkedList;
+import java.util.Set;
 
 public class HBRelations {
 
-    public static Hashtable<Operation, LinkedList<Operation>> generatHBRelations(Program program) {
-        Hashtable<Operation, LinkedList<Operation>> HBTables = new Hashtable<>();
+    public static Hashtable<Operation, Set<Operation>> generatHBRelations(Program program) {
+        Hashtable<Operation, Set<Operation>> HBTables = new Hashtable<>();
         Operation lastR = null;
         Hashtable<Integer, Operation> lastS = new Hashtable<>();
         Hashtable<Integer, Operation> firstS = new Hashtable<>();
@@ -19,13 +20,13 @@ public class HBRelations {
                 if (operation.isRecv()) {
                     if (lastR != null) {
 //                        lastR <HB op(r)
-                        if (!HBTables.containsKey(lastR)) HBTables.put(lastR, new LinkedList<Operation>());
+                        if (!HBTables.containsKey(lastR)) HBTables.put(lastR, new HashSet<Operation>());
                         HBTables.get(lastR).add(operation);
                     }
                     for (Integer dest : lastS.keySet()) {
 //                        lastS <HB op(r)
                         if (!HBTables.containsKey(lastS.get(dest)))
-                            HBTables.put(lastS.get(dest), new LinkedList<Operation>());
+                            HBTables.put(lastS.get(dest), new HashSet<Operation>());
                         HBTables.get(lastS.get(dest)).add(operation);
                     }
                     lastS.clear();
@@ -41,18 +42,18 @@ public class HBRelations {
                             lastR = operation.req;
                         } else {
                             lastR = operation.req;
-                            if (!HBTables.containsKey(lastR)) HBTables.put(lastR, new LinkedList<Operation>());
+                            if (!HBTables.containsKey(lastR)) HBTables.put(lastR, new HashSet<Operation>());
                         }
                     }
                 }
                 //if operation is a SEND
                 if (operation.isSend()) {
                     if (lastR != null) {
-                        if (!HBTables.containsKey(lastR)) HBTables.put(lastR, new LinkedList<Operation>());
+                        if (!HBTables.containsKey(lastR)) HBTables.put(lastR, new HashSet<Operation>());
                         HBTables.get(lastR).add(operation);//lastR <HB s
                     }
                     if(lastS.containsKey(operation.dst)){
-                        if(!HBTables.containsKey(lastS.get(operation.dst))) HBTables.put(lastS.get(operation.dst), new LinkedList<Operation>());
+                        if(!HBTables.containsKey(lastS.get(operation.dst))) HBTables.put(lastS.get(operation.dst), new HashSet<Operation>());
                         HBTables.get(lastS.get(operation.dst)).add(operation);//lastS <HB  s
                     }
                     lastS.put(operation.dst,operation);

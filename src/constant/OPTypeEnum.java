@@ -10,7 +10,9 @@ public enum OPTypeEnum {
     RECV("r"),
     IRECV("ir"),
     WAIT("w"),
-    BARRIER("b");
+    BARRIER("b"),
+    BOT("bot"),
+    NOCOMM("nocomm");
 
     private final String optype;
 
