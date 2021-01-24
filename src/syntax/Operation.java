@@ -6,21 +6,21 @@ import constant.OPTypeEnum;
  *
  */
 public class Operation {
-    int index;//index in execution
-    int indx;//index in process
-    int rank;//the rank of each action in same type actions process[for example: r.rank = process.rlist.indexof(r)]
-    int proc;//the rank of process
-    int src;//source
-    int dst;//destination
-    int tag;//tag
-    int group;//group
-    int reqID;//the req action's idx
-    Operation req;//for a wait ;the req is an operation which is witnessed by the wait
-    OPTypeEnum type;//the type is num : "send", "recv", "wait", "barrier", "bot"
-    Operation Nearstwait;//for a recv or a send, this wait is NearestWait
+    public int index;//index in execution
+    public int indx;//index in process
+    public int rank;//the rank of each action in same type actions process[for example: r.rank = process.rlist.indexof(r)]
+    public int proc;//the rank of process
+    public int src;//source
+    public int dst;//destination
+    public int tag;//tag
+    public int group;//group
+    public int reqID;//the req action's idx
+    public Operation req;//for a wait ;the req is an operation which is witnessed by the wait
+    public OPTypeEnum type;//the type is num : "send", "recv", "wait", "barrier", "bot"
+    public Operation Nearstwait;//for a recv or a send, this wait is NearestWait
 //    SendModeEnum sendmode;//the type is num: "ssend", "rsend", "bsend", "tsend"
 
-    public Operation(OPTypeEnum type, int index, int proc, int src, int dst,int tag, int group, int reqID){
+    public Operation(OPTypeEnum type, int index, int proc, int src, int dst, int tag, int group, int reqID) {
         this.type = type;
         this.index = index;
         this.proc = proc;
@@ -32,23 +32,24 @@ public class Operation {
         Nearstwait = null;
     }
 
-    public Operation(OPTypeEnum type, int index, int proc){
+    public Operation(OPTypeEnum type, int index, int proc) {
         this.type = type;
         this.index = index;
         this.proc = proc;
     }
+
     //log the information of this operation by...
-    public void logOPInfo(){
+    public void logOPInfo() {
 
     }
 
-    public boolean isSend(){
-        return (this.type == OPTypeEnum.SEND|| this.type == OPTypeEnum.ISEND
-                ||this.type == OPTypeEnum.STANDARD_SEND || this.type == OPTypeEnum.SYCHRONIZED_SEND
-                ||this.type == OPTypeEnum.READY_SEND || this.type == OPTypeEnum.BUFFERED_SEND);
+    public boolean isSend() {
+        return (this.type == OPTypeEnum.SEND || this.type == OPTypeEnum.ISEND
+                || this.type == OPTypeEnum.STANDARD_SEND || this.type == OPTypeEnum.SYCHRONIZED_SEND
+                || this.type == OPTypeEnum.READY_SEND || this.type == OPTypeEnum.BUFFERED_SEND);
     }
 
-    public boolean isRecv(){
+    public boolean isRecv() {
         return (this.type == OPTypeEnum.IRECV || this.type == OPTypeEnum.RECV);
     }
 

@@ -1,12 +1,21 @@
-package syntax;
+package methods;
 
 import constant.OPTypeEnum;
+import syntax.Operation;
+import syntax.Process;
+import syntax.Program;
 
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
 
 public class HBRelations {
+    /**
+     * generate the Happens-Before Relations
+     *
+     * @param program
+     * @return HashTable<Operation, Set<Operation>>
+     */
 
     public static Hashtable<Operation, Set<Operation>> generatHBRelations(Program program) {
         Hashtable<Operation, Set<Operation>> HBTables = new Hashtable<>();
@@ -52,11 +61,12 @@ public class HBRelations {
                         if (!HBTables.containsKey(lastR)) HBTables.put(lastR, new HashSet<Operation>());
                         HBTables.get(lastR).add(operation);//lastR <HB s
                     }
-                    if(lastS.containsKey(operation.dst)){
-                        if(!HBTables.containsKey(lastS.get(operation.dst))) HBTables.put(lastS.get(operation.dst), new HashSet<Operation>());
+                    if (lastS.containsKey(operation.dst)) {
+                        if (!HBTables.containsKey(lastS.get(operation.dst)))
+                            HBTables.put(lastS.get(operation.dst), new HashSet<Operation>());
                         HBTables.get(lastS.get(operation.dst)).add(operation);//lastS <HB  s
                     }
-                    lastS.put(operation.dst,operation);
+                    lastS.put(operation.dst, operation);
                 }
             }
         }
