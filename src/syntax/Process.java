@@ -11,9 +11,9 @@ public class Process {
     public LinkedList<Operation> slist;
 
     public Process(int rank){
-        ops = new LinkedList<>();
-        rlist = new LinkedList<>();
-        slist = new LinkedList<>();
+        ops = new LinkedList<Operation>();
+        rlist = new LinkedList<Operation>();
+        slist = new LinkedList<Operation>();
         this.rank = rank;
     }
 
@@ -39,5 +39,9 @@ public class Process {
 
     public void printProcessInfo(){
         System.out.println("process rank:"+rank+", has TOTAL "+ops.size()+" calls and has "+rlist.size()+" recv calls and "+slist.size()+" send calls");
+    }
+
+    public int Size(){
+        return ops.size();
     }
 }

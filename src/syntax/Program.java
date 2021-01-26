@@ -23,6 +23,7 @@ public class Program {
     public ArrayList<Process> processArrayList;
     public Hashtable<Operation, LinkedList<Operation>> matchTables;
     public Hashtable<Operation, Set<Operation>> HBTables;
+    public boolean checkInfiniteBuffer = true;
 
     public Program(String filepath) {
         //初始化variables！！！
@@ -48,9 +49,11 @@ public class Program {
             if (operation != null) {
                 if (processArrayList.size() <= operation.proc) {
                     Process process = new Process(operation.proc);
+                    operation.rank = process.ops.size();
                     process.append(operation);
                     processArrayList.add(process);
                 } else {
+                    operation.rank = processArrayList.get(operation.proc).Size();
                     processArrayList.get(operation.proc).append(operation);
                 }
             }//if(op!=null)
@@ -97,5 +100,10 @@ public class Program {
         }
         program.printMatchPairs();
     }
+
+    public boolean isCheckInfiniteBuffer(){
+        return checkInfiniteBuffer;
+    }
+
 
 }

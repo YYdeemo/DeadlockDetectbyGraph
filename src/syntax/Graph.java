@@ -167,5 +167,9 @@ public class Graph {
         return ETable.get(v);
     }
 
+    public boolean isCheckInfiniteBuffer(){
+        return program.checkInfiniteBuffer;
+    }
+
 
 }

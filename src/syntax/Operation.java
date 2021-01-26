@@ -6,9 +6,9 @@ import constant.OPTypeEnum;
  *
  */
 public class Operation {
-    public int index;//index in execution
+    public int index;//the rank of each action in same type actions process[for example: r.rank = process.rlist.indexof(r)]
     public int indx;//index in process
-    public int rank;//the rank of each action in same type actions process[for example: r.rank = process.rlist.indexof(r)]
+    public int rank;//the rank of the process, Line number
     public int proc;//the rank of process
     public int src;//source
     public int dst;//destination
