@@ -53,5 +53,10 @@ public class Operation {
         return (this.type == OPTypeEnum.IRECV || this.type == OPTypeEnum.RECV);
     }
 
+    public boolean isBlock(){
+        return (this.type == OPTypeEnum.BARRIER || this.type == OPTypeEnum.WAIT
+                || this.type == OPTypeEnum.RECV || this.type == OPTypeEnum.SYCHRONIZED_SEND);
+    }
+
 
 }

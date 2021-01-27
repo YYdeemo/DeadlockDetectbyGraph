@@ -171,5 +171,13 @@ public class Graph {
         return program.checkInfiniteBuffer;
     }
 
+    public int getEdgeNum(){
+        int edgeNum = 0;
+        for (Operation op : ETable.keySet()) {
+            edgeNum += ETable.get(op).size();
+        }
+        return edgeNum;
+    }
+
 
 }

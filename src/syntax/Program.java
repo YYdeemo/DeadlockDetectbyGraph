@@ -83,6 +83,10 @@ public class Program {
         }
     }
 
+    public Process get(int i){
+        return processArrayList.get(i);
+    }
+
     public void printMatchPairs() {
         System.out.println("MATCH PAIRS IS SHOWN AS FOLLOWING :");
         for (Operation R : matchTables.keySet()) {
@@ -104,6 +108,8 @@ public class Program {
     public boolean isCheckInfiniteBuffer(){
         return checkInfiniteBuffer;
     }
+
+
 
 
 }

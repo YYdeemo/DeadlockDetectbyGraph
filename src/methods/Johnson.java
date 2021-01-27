@@ -3,6 +3,7 @@ package methods;
 import constant.OPTypeEnum;
 import syntax.Graph;
 import syntax.Operation;
+import syntax.Pattern;
 import syntax.Program;
 
 import java.util.*;
@@ -17,7 +18,7 @@ public class Johnson {
     public Operation v;
     public Operation w;
     public int leastVertex;
-    public LinkedList<Hashtable<Integer, Operation>> patterns;//which save the fake deadlock candidates
+    public LinkedList<Pattern> patterns;//which save the fake deadlock candidates
 
     public Stack<Operation> stack;//
     Hashtable<Operation, Boolean> blocked;
@@ -32,7 +33,7 @@ public class Johnson {
 
     public Johnson(Graph graph) {
         this.graph = graph;
-        patterns = new LinkedList<Hashtable<Integer, Operation>>();
+        patterns = new LinkedList<Pattern>();
         stack = new Stack<Operation>();
         blocked = new Hashtable<Operation, Boolean>();
         blockedNodes = new Hashtable<Operation, List<Operation>>();
@@ -96,12 +97,12 @@ public class Johnson {
         Operation vertex = graph.VList.get(v);
         Operation startvertex = graph.VList.get(s);
 
-        if (stack.empty() || stack.peek().proc != vertex.proc) {
+        if (stack.empty() || stack.peek().proc != vertex.proc) {//if the vertex is the first node for the orphaned or if the node from a new process
             orphaned.push(vertex);
         }
         stack.push(vertex);
-
-        if (!(graph.isCheckInfiniteBuffer() && vertex.isSend())) {
+        //block_count count the number of operations besides the sends which in infinite buffer (<pro.rank, num>)
+        if (!(graph.isCheckInfiniteBuffer() && vertex.isSend())) {//TRUE:not infinite & send / not send /not infinite and not send
             if (!block_count.containsKey(vertex.proc))
                 block_count.put(vertex.proc, 1);
             else block_count.put(vertex.proc, block_count.get(vertex.proc) + 1);
@@ -115,61 +116,29 @@ public class Johnson {
         continuepoint:
         for (Operation w : graph.ETable.get(vertex)) {
 
-            if (!(good_edge(vertex, w, startvertex)))
+            if (!(good_edge(vertex, w, startvertex)))//check whether the path is good_edge
                 continue continuepoint;
 
-            if (vertex.proc != w.proc)
+            if (vertex.proc != w.proc)//???the orphaned_paths save <v.proc,w>
                 orphaned_paths.put(vertex.proc, w);
 
             adj_leastSCC.add(w);
 
-//            System.out.println("stack:" +stack);
-
-
-            if (w == startvertex) {
+            if (w == startvertex) {// find the circle
                 if (stack.size() > 2) {
-                    boolean isallNocomm = true;
-                    for (Operation op : stack) {
-                        if (!(op.type.equals(OPTypeEnum.NOCOMM))) {
-                            isallNocomm = false;
-                            break;
-                        }
-                    }
 
-                    if (isallNocomm)
+                    if (isALLNocomm(stack))
                         continue continuepoint;
 
-                    Hashtable<Integer, Operation> pattern = new Hashtable<Integer, Operation>();
-                    for (Operation op : stack) {
-                        count_cut++;
-                        if (graph.isCheckInfiniteBuffer()) {
-                            if (op.isSend())
-                                continue;
-                        }
+                    count_cut = count_cut + stack.size();
+                    Pattern pattern = new Pattern(graph, stack);//get the pattern from the circle
 
-                        int opEP = op.proc;
-                        int opOrder = op.type.equals(OPTypeEnum.NOCOMM) ? graph.program.processArrayList.get(op.proc).Size() : op.rank;
-
-                        if (!pattern.containsKey(opEP)) {
-                            pattern.put(opEP, op);
-                            continue;
-                        }
-                        //only keep the operation with lowest rank on each process
-                        int order = pattern.get(opEP).type.equals(OPTypeEnum.NOCOMM) ? graph.program.processArrayList.get(pattern.get(opEP).proc).Size() : pattern.get(opEP).rank;
-
-                        if (order > opOrder)
-                            pattern.put(opEP, op);
-                    }
-
-                    if (pattern.size() > 1 && !patterns.contains(pattern)) { //&& !hasMatch(pattern)){
-
-                        //System.out.println("stack:" +stack);
-                        //System.out.println("pattern:" + pattern);
+                    if (pattern.getSize() > 1 && !patterns.contains(pattern)) {
                         patterns.add(pattern);
                         f = true;
                     }
 
-                    if (count_cut >= 500000000)
+                    if (count_cut >= 500000000)//time out
                         return f;
                 }
 
@@ -190,7 +159,7 @@ public class Johnson {
                 }
             }
         }
-
+        //
         if (orphaned.peek().equals(stack.peek())) {
             orphaned.pop();
             orphaned_paths.remove(stack.peek());
@@ -273,7 +242,20 @@ public class Johnson {
         }
     }
 
+    public boolean isALLNocomm(Stack<Operation> stack) {
+        boolean isallNocomm = true;
+        for (Operation op : stack) {
+            if (!(op.type.equals(OPTypeEnum.NOCOMM))) {
+                isallNocomm = false;
+                break;
+            }
+        }
+        return isallNocomm;
+    }
 
+    public LinkedList<Pattern> getPatterns() {
+        return patterns;
+    }
 }
 
 class TarjanSCC {
