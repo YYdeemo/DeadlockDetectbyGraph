@@ -19,7 +19,6 @@ import java.util.*;
  *       3.construct the partial order based on happens-before relation
  */
 public class Program {
-    public int size;//the count of processes
     public ArrayList<Process> processArrayList;
     public Hashtable<Operation, LinkedList<Operation>> matchTables;
     public Hashtable<Operation, Set<Operation>> HBTables;
@@ -29,10 +28,8 @@ public class Program {
         //初始化variables！！！
         processArrayList = new ArrayList<>();
         initializeProgramFromCTP(filepath);
-        cmpOPsInfo();
-        size = processArrayList.size();
         matchTables = MatchPairs.overApproximateMatchs(this);
-        HBTables = HBRelations.generatHBRelations(this);
+//        HBTables = HBRelations.generatHBRelations(this);
     }
 
     /*
@@ -45,7 +42,7 @@ public class Program {
         String[] aStr;
         while (listIterator.hasNext()) {
             aStr = listIterator.next();
-            Operation operation = CmpFile.translateFromStrToOP(aStr);
+            Operation operation = CmpFile.translateFromStrToOP1(aStr);
             if (operation != null) {
                 if (processArrayList.size() <= operation.proc) {
                     Process process = new Process(operation.proc);
@@ -58,6 +55,7 @@ public class Program {
                 }
             }//if(op!=null)
         }//while
+        cmpOPsInfo();
     }
 
     /*
@@ -69,15 +67,16 @@ public class Program {
     private void cmpOPsInfo() {
         for (Process process : processArrayList) {
             for (Operation operation : process.ops) {
+                operation.rank = process.ops.indexOf(operation);
                 if (operation.type == OPTypeEnum.WAIT) {
                     operation.req = process.ops.get(operation.reqID);
                     process.ops.get(operation.reqID).Nearstwait = operation;
                 }
                 if (operation.isRecv()) {
-                    operation.rank = process.rlist.indexOf(operation);
+                    operation.index = process.rlist.indexOf(operation);
                 }
                 if (operation.isSend()) {
-                    operation.rank = process.slist.indexOf(operation);
+                    operation.index = process.slist.indexOf(operation);
                 }
             }
         }
@@ -87,21 +86,48 @@ public class Program {
         return processArrayList.get(i);
     }
 
+    public int getSize() {
+        return processArrayList.size();
+    }
+
+    public ArrayList<Process> getAllProcesses() {
+        return processArrayList;
+    }
+
     public void printMatchPairs() {
         System.out.println("MATCH PAIRS IS SHOWN AS FOLLOWING :");
         for (Operation R : matchTables.keySet()) {
             for (Operation S : matchTables.get(R)) {
-                System.out.println("<R" + R.index + ", S" + S.index + ">");
+                System.out.println("<R"+ R.proc+"_"+ R.index + ", S" + S.proc + "_" + S.index + ">");
             }
+        }
+    }
+
+    public void printALLOperations(){
+        System.out.println("the program:");
+        for(Process process : processArrayList){
+            System.out.println("TYPE P D I");
+            for(Operation operation : process.ops){
+                if(operation.isSend()){
+                    System.out.println(operation.type+" "+operation.proc+" "+operation.dst+" "
+                            +operation.rank);
+                }else if(operation.isRecv()) {
+                    System.out.println(operation.type+" "+operation.proc+" "+operation.src+" "
+                            +operation.rank);
+                }else if(operation.isWait()){
+                    System.out.println(operation.type+" "+operation.proc+" "+operation.req.rank+" "+operation.rank);
+                }else if(operation.isBarrier()){
+                    System.out.println(operation.type+" "+operation.proc+" "+operation.rank+" "+operation.group);
+                }
+            }
+            System.out.println(" ");
         }
     }
 
 
     public static void main(String[] args) {
-        Program program = new Program("./src/test/test_ctp_cmp.txt");
-        for (Process process : program.processArrayList) {
-            process.printProcessInfo();
-        }
+        Program program = new Program("./src/test/fixtures/5.txt");
+        program.printALLOperations();
         program.printMatchPairs();
     }
 

@@ -49,12 +49,11 @@ public class Process {
         int indicator = 0;
         //LinkedList<Operation> visitedOPs = new LinkedList<Operation>();
         while (indicator < ops.size()) {
-            if (ops.get(indicator).type.equals(OPTypeEnum.NOCOMM) || ops.get(indicator).type.equals(OPTypeEnum.BOT))
+            if (ops.get(indicator).type.equals(OPTypeEnum.BARRIER) || ops.get(indicator).type.equals(OPTypeEnum.BOT))
                 break;
 
             if (ops.get(indicator).isRecv()) {
-                if (ops.get(indicator).isBlock())
-                    break;
+                break;
             }
             //op could be a wait if receives are non-blocking
             if (ops.get(indicator).type.equals(OPTypeEnum.WAIT)) {

@@ -26,8 +26,16 @@ import java.util.LinkedList;
  */
 public class CmpFile {
 
-
-    public static LinkedList<String[]> CompleteCTPFromFile(String filepath){
+    /**
+     * to complete the ctp
+     * if there is a blocking operation, then we change it to a non-blocking operation and a nearlest wait
+     * special for synchronous send which is non-blocing, but in semantic，it is blocking
+     * @param filepath
+     * @return ctp file
+     *
+     *
+     */
+    public static LinkedList<String[]> getCTPFromFile(String filepath){
         LinkedList<String[]> ctp = new LinkedList<>();
         try{
             //read the ctp from the file with filepath
@@ -35,39 +43,46 @@ public class CmpFile {
             String actionInfo;//the each line is an action
             int count = 0;
             boolean hasBlocking = false;//whether a process has blocking operations such as recv, ssend , rsend
+            boolean lastLine = false;//which record the last line is empty
             //read each line of the file, add the action in ctp
             while((actionInfo=reader.readLine())!=null){
                 if(actionInfo.isEmpty()){//if the line is empty, then the next is new process
-                    ctp.add(new String[0]);
-                    count = 0;
-                    hasBlocking = false;
+                    lastLine = true;
                     continue;
                 }
+                if(lastLine && actionInfo.matches("^[rswb]") && ctp.size()>0){
+                    ctp.add(new String[0]);
+                }
                 ctp.addLast(actionInfo.split(" "));
-                if(hasBlocking){
-                    ctp.getLast()[1] = String.valueOf(count);
-                }
-                count++;
-                if(ctp.getLast()[0].matches("r|ss|rs")){
-                    //if the last action is bllocking recv or ready/synchronized send, then we add the nearliest wait for them.
-                    String[] a_blocking = ctp.getLast();
-                    //add the wait is "w count a'processid a.id"
-                    String[] new_wait = {"w",String.valueOf(count),a_blocking[2],a_blocking[1]};
-                    ctp.addLast(new_wait);
-                    count++;
-                    hasBlocking = true;
-                }
+                lastLine = false;
             }
             reader.close();//close the buffered reader
         }catch (IOException error){
             System.out.println("func:CompleteCTPFromFile()  ERROR:"+error.toString());
         }
-
         return ctp;
     }
 
+    static String BlockToNonBlocking(String type){
+        String result = null;
+        switch (type){
+            case "br":
+                result = "r";
+                break;
+            case "bs":
+                result  = "s";
+                break;
+            default:
+                result = type;
+                break;
+        }
+        return result;
+    }
+
+
     public static void WriteCTPtoFile(LinkedList<String[]> ctp, String filepath){
         try {
+            if(filepath.contains("fixtures")) filepath = filepath.replaceAll("fixtures","fixtures/cmp_ctp");
             FileWriter fwriter = new FileWriter(filepath.replaceAll(".txt", "_cmp.txt"));
             //get the completed ctp from above function, then write it to the new file with same format
             BufferedWriter bwriter = new BufferedWriter(fwriter);
@@ -87,91 +102,118 @@ public class CmpFile {
         }
     }
 
-    public static LinkedList<String[]> getCTPFromFile(String filepath){
-        LinkedList<String[]> ctp = new LinkedList<>();
-        try{
-            FileReader fileReader = new FileReader(filepath);
-            BufferedReader bufferedReader = new BufferedReader(fileReader);
-            String aStr;
-            while((aStr=bufferedReader.readLine())!=null){
-                if(aStr.isEmpty())
-                    ctp.add(new String[0]);//a empty String Array means the next is a new process
-                else
-                    ctp.add(aStr.split(" "));//ctp add a new actionInfo
-            }
-        }catch (IOException error){
-            System.out.println("func:getCTPFromFile() ERROR:"+error.toString());
-        }
-        return ctp;
-    }
-
-    public static Operation translateFromStrToOP(String[] aStr){
+    public static Operation translateFromStrToOP2(String[] aStr){
         Operation operation = null;
-            if(aStr.length<0)
+            if(aStr.length<=0)
                 return null;
-            switch (aStr[0]){
-                case "r":
-                    operation = new Operation(OPTypeEnum.RECV,//type
-                            Integer.parseInt(aStr[1]),//idx
-                            Integer.parseInt(aStr[2]),//proc
-                            Integer.parseInt(aStr[3]),//src
-                            Integer.parseInt(aStr[4]),//dst
-                            Constants.defultInt,//tag
-                            Constants.defultInt,//group
-                            Constants.defultInt//reqID
-                            );
-                    break;
-                case "s":
-                    operation = new Operation(OPTypeEnum.SEND,//type
-                            Integer.parseInt(aStr[1]),//idx
-                            Integer.parseInt(aStr[2]),//proc
-                            Integer.parseInt(aStr[3]),//src
-                            Integer.parseInt(aStr[4]),//dst
-                            Constants.defultInt,//tag
-                            Constants.defultInt,//group
-                            Constants.defultInt//reqID
-                    );
-                    break;
-                case "ss":
-                    operation = new Operation(OPTypeEnum.SYCHRONIZED_SEND,//type
-                            Integer.parseInt(aStr[1]),//idx
-                            Integer.parseInt(aStr[2]),//proc
-                            Integer.parseInt(aStr[3]),//src
-                            Integer.parseInt(aStr[4]),//dst
-                            Constants.defultInt,//tag
-                            Constants.defultInt,//group
-                            Constants.defultInt//reqID
-                    );
-                    break;
-                case "w":
-                    operation = new Operation(OPTypeEnum.WAIT,//type
-                            Integer.parseInt(aStr[1]),//idx
-                            Integer.parseInt(aStr[2]),//proc
-                            Constants.defultInt,//src
-                            Constants.defultInt,//dst
-                            Constants.defultInt,//tag
-                            Constants.defultInt,//group
-                            Integer.parseInt(aStr[3])//the req action's Idx
-                    );
-                    break;
-                case "b":
-                    operation = new Operation(OPTypeEnum.BARRIER,//type
-                            Integer.parseInt(aStr[1]),//idx
-                            Integer.parseInt(aStr[2]),//proc
-                            Constants.defultInt,//src
-                            Constants.defultInt,//dst
-                            Constants.defultInt,//tag
-                            Integer.parseInt(aStr[3]),//group
-                            Constants.defultInt//reqID
-                    );
-                    break;
+            if(aStr[0].matches("r|br|s|bs|ss|rs|sds")) {
+                operation = new Operation(FromTextGetType(aStr[0]),//type
+                        Integer.parseInt(aStr[1]),//idx
+                        Integer.parseInt(aStr[2]),//proc
+                        Integer.parseInt(aStr[3]),//src
+                        Integer.parseInt(aStr[4]),//dst
+                        Constants.defultInt,//tag
+                        Constants.defultInt,//group
+                        Constants.defultInt//reqID
+                );
+            }else if (aStr[0].matches("w")) {
+                operation = new Operation(OPTypeEnum.WAIT,//type
+                        Integer.parseInt(aStr[1]),//idx
+                        Integer.parseInt(aStr[2]),//proc
+                        Constants.defultInt,//src
+                        Constants.defultInt,//dst
+                        Constants.defultInt,//tag
+                        Constants.defultInt,//group
+                        Integer.parseInt(aStr[3])//the req action's Idx
+                );
+            }else if (aStr[0].matches("b")) {
+                operation = new Operation(OPTypeEnum.BARRIER,//type
+                        Integer.parseInt(aStr[1]),//idx
+                        Integer.parseInt(aStr[2]),//proc
+                        Constants.defultInt,//src
+                        Constants.defultInt,//dst
+                        Constants.defultInt,//tag
+                        Integer.parseInt(aStr[3]),//group
+                        Constants.defultInt//reqID
+                );
+            }else {
+                return null;
             }
         return operation;
+    }
+    public static Operation translateFromStrToOP1(String[] aStr){
+        Operation operation = null;
+        if(aStr.length<=0)
+            return null;
+        if(aStr[0].matches("r|br")) {
+            operation = new Operation(FromTextGetType(aStr[0]),//type
+                    Integer.parseInt(aStr[3]),//idx
+                    Integer.parseInt(aStr[1]),//proc
+                    Integer.parseInt(aStr[2]),//src
+                    Integer.parseInt(aStr[1]),//dst
+                    Constants.defultInt,//tag
+                    Constants.defultInt,//group
+                    Constants.defultInt//reqID
+            );
+        }else if(aStr[0].matches("s|bs|ss|rs|sds")) {
+            operation = new Operation(FromTextGetType(aStr[0]),//type
+                    Integer.parseInt(aStr[3]),//idx
+                    Integer.parseInt(aStr[1]),//proc
+                    Integer.parseInt(aStr[1]),//src
+                    Integer.parseInt(aStr[2]),//dst
+                    Constants.defultInt,//tag
+                    Constants.defultInt,//group
+                    Constants.defultInt//reqID
+            );
+        }else if (aStr[0].matches("w")) {
+            operation = new Operation(OPTypeEnum.WAIT,//type
+                    Constants.defultInt,//idx
+                    Integer.parseInt(aStr[1]),//proc
+                    Constants.defultInt,//src
+                    Constants.defultInt,//dst
+                    Constants.defultInt,//tag
+                    Constants.defultInt,//group
+                    Integer.parseInt(aStr[2])//the req action's Idx
+            );
+        }else if (aStr[0].matches("b")) {
+            operation = new Operation(OPTypeEnum.BARRIER,//type
+                    Constants.defultInt,//idx
+                    Integer.parseInt(aStr[1]),//proc
+                    Constants.defultInt,//src
+                    Constants.defultInt,//dst
+                    Constants.defultInt,//tag
+                    Integer.parseInt(aStr[2]),//group
+                    Constants.defultInt//reqID
+            );
+        }else {
+            return null;
+        }
+        return operation;
+    }
+
+    public static OPTypeEnum FromTextGetType(String type){
+        switch (type){
+            case "r":
+                return OPTypeEnum.RECV;
+            case "br":
+                return OPTypeEnum.B_RECV;
+            case "s":
+                return OPTypeEnum.SEND;
+            case "bs":
+                return OPTypeEnum.B_SEND;
+            case "ss":
+                return OPTypeEnum.STANDARD_SEND;
+            case "rs":
+                return OPTypeEnum.READY_SEND;
+            case "sds":
+                return OPTypeEnum.STANDARD_SEND;
+        }
+        return null;
     }
     //TEST
     public static void main(String[] args){
         String filepath = "./src/test/test_ctp.txt";
-        LinkedList<String[]> ctp = CompleteCTPFromFile(filepath);
+        LinkedList<String[]> ctp = getCTPFromFile(filepath);
         WriteCTPtoFile(ctp,filepath);
         System.out.println(ctp.size());
     }

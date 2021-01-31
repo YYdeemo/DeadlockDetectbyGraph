@@ -1,5 +1,6 @@
 package methods;
 
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import syntax.Operation;
 import syntax.Process;
 import syntax.Program;
@@ -25,16 +26,16 @@ public class MatchPairs {
     public static Hashtable<Operation, LinkedList<Operation>> overApproximateMatchs(Program program) {
         Hashtable<Operation, LinkedList<Operation>> matchTables = new Hashtable<>();
         //put each send operation to the specific list
-        LinkedList<Operation>[][] sendList = new LinkedList[program.size][program.size];
-        for (Process process : program.processArrayList) {
+        LinkedList<Operation>[][] sendList = new LinkedList[program.getSize()][program.getSize()];
+        for (Process process : program.getAllProcesses()) {
             for (Operation send : process.slist) {
                 if (sendList[send.dst][process.rank] == null) sendList[send.dst][process.rank] = new LinkedList<>();
                 sendList[send.dst][process.rank].add(send);
             }
         }
         //for each recv we find the set of sends which can match with it
-        for (Process process : program.processArrayList) {
-            int[] rCount = new int[program.size + 1];
+        for (Process process : program.getAllProcesses()) {
+            int[] rCount = new int[program.getSize() + 1];
             int sTotalCountForR = 0;
             for (int j = 0; j < sendList[process.rank].length; j++) {
                 if (sendList[process.rank][j] != null)
@@ -47,18 +48,22 @@ public class MatchPairs {
                     Iterator<Operation> iterator_s = sendList[process.rank][j].iterator();
                     while (iterator_s.hasNext()) {
                         Operation send = iterator_s.next();
+//                        System.out.println("S"+send.proc+"_"+send.index);
+//                        System.out.println("R"+recv.proc+"_"+recv.index);
+//                        System.out.println(send.index+" "+rCount[send.dst]+ " "+rCount[program.getSize()]+" "+sTotalCountForR+" "+sendList[send.dst][send.src].size());
                         if ((recv.src == send.src || recv.src == -1)//rule
-                                && send.rank <= rCount[send.src] + rCount[program.size] + 1 //rule 1
-                                && send.rank >= rCount[send.src] + Integer.max(0, rCount[program.size] - (sTotalCountForR - sendList[send.dst][send.src].size())) //rule2
-                        ) {
-                            sforR.add(send);
-                        }
+                                && send.index <= rCount[send.dst] + rCount[program.getSize()] + 1 //rule 1
+                                && send.index >= rCount[send.dst] + rCount[program.getSize()] - Integer.max(0, (sTotalCountForR - sendList[send.dst][send.src].size())) //rule2
+                        ) sforR.add(send);
                     }
-                    if (recv.src == -1) rCount[program.size]++;
-                    else rCount[recv.src]++;
-
-                    if (!sforR.isEmpty()) matchTables.put(recv, sforR);
                 }
+//                System.out.println("recv.src"+recv.src);
+                if (recv.src == -1) {
+                    rCount[program.getSize()]++;
+                } else {
+                    rCount[recv.dst]++;
+                }
+                if (!sforR.isEmpty()) matchTables.put(recv, sforR);
             }
         }
         return matchTables;

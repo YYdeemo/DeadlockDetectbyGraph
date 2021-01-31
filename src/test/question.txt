@@ -4,3 +4,24 @@ Questions:
 recv或者send加一个紧跟着的wait来实现，那么在代码中所有的recv或者send；我们都视为non-blocking吗？
 2.r <HB w； where the w's req is the r ;这个recv和wait之间的happens before的关系需要添加吗？（原方法中没有）
 3.HashMap<Wait, LinkedList<Recv>> witnessedRecv; 为什么一个wait 对应多个recv？
+
+time:2021.1.28
+讨论内容：
+1.noComm可以同论文中一致，改用为Barrier
+2.目前主要实现non-blocking的recv
+3.注意需要加入send modes的内容
+4.可以多个recv对应一个wait， 这是在语义中实现，而非程序本身
+
+注意！：重写而非改写
+
+论文内容：如何合并多个recv或send，合并规则，以及添加所需的wait的情况
+
+
+只有non-blocking operation 才有wait！
+目前所有operation均为non-blocking
+
+MPI_SEND --> blocking_send --> B_Send --> s
+MPI_ISEND--> nonblocking_send --> Send --> is
+
+MPI_RECV --> blocking_recv --> B_Recv --> r
+MPI_IRECV--> nonblocking_recv --> Recv --> ir

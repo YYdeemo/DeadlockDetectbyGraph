@@ -44,19 +44,19 @@ public class Operation {
     }
 
     public boolean isSend() {
-        return (this.type == OPTypeEnum.SEND || this.type == OPTypeEnum.ISEND
-                || this.type == OPTypeEnum.STANDARD_SEND || this.type == OPTypeEnum.SYCHRONIZED_SEND
-                || this.type == OPTypeEnum.READY_SEND || this.type == OPTypeEnum.BUFFERED_SEND);
+        return (this.type == OPTypeEnum.SEND
+                || this.type == OPTypeEnum.STANDARD_SEND
+                || this.type == OPTypeEnum.SYCHRONIZED_SEND
+                || this.type == OPTypeEnum.READY_SEND);
     }
 
     public boolean isRecv() {
-        return (this.type == OPTypeEnum.IRECV || this.type == OPTypeEnum.RECV);
+        return (this.type == OPTypeEnum.RECV);
     }
 
-    public boolean isBlock(){
-        return (this.type == OPTypeEnum.BARRIER || this.type == OPTypeEnum.WAIT
-                || this.type == OPTypeEnum.RECV || this.type == OPTypeEnum.SYCHRONIZED_SEND);
-    }
+    public boolean isWait() { return (this.type == OPTypeEnum.WAIT); }
 
+    public boolean isBarrier() { return (this.type == OPTypeEnum.BARRIER); }
 
+    public boolean isBot() { return (this.type == OPTypeEnum.BOT); }
 }

@@ -1,24 +1,28 @@
 package constant;
 
 public enum OPTypeEnum {
-    SEND("s"),
-    ISEND("is"),
+    SEND("s"),//non-blocking send
+    B_SEND("bs"),//blocking send
+
+    //non-blocking send
     SYCHRONIZED_SEND("ss"),
     READY_SEND("rs"),
-    BUFFERED_SEND("bs"),
-    STANDARD_SEND("bs"),
-    RECV("r"),
-    IRECV("ir"),
+//    BUFFERED_SEND("bfs"), //which is same as SEND
+    STANDARD_SEND("sds"),
+
+    RECV("r"),//non-blocking recv
+    B_RECV("br"),//blocking recv
+
     WAIT("w"),
     BARRIER("b"),
-    BOT("bot"),
-    NOCOMM("nocomm");
+    BOT("bot");
 
-    private final String optype;
+    public final String optype;
 
-    private OPTypeEnum(String optype){
+    OPTypeEnum(String optype){
         this.optype = optype;
     }
+
 
     public String getOptype(){
         return optype;
