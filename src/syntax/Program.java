@@ -2,6 +2,7 @@ package syntax;
 
 import constant.OPTypeEnum;
 import methods.HBRelations;
+import methods.MatchOrder;
 import methods.MatchPairs;
 import prework.CmpFile;
 
@@ -22,13 +23,16 @@ public class Program {
     public ArrayList<Process> processArrayList;
     public Hashtable<Operation, LinkedList<Operation>> matchTables;
     public Hashtable<Operation, Set<Operation>> HBTables;
+    public MatchOrder matchOrder;
     public boolean checkInfiniteBuffer = true;
 
     public Program(String filepath) {
         //初始化variables！！！
         processArrayList = new ArrayList<>();
         initializeProgramFromCTP(filepath);
-        matchTables = MatchPairs.overApproximateMatchs(this);
+        setMatchTables();
+        matchOrder = new MatchOrder(this);
+        matchOrder.printOrderRelation();
 //        HBTables = HBRelations.generatHBRelations(this);
     }
 
@@ -42,7 +46,7 @@ public class Program {
         String[] aStr;
         while (listIterator.hasNext()) {
             aStr = listIterator.next();
-            Operation operation = CmpFile.translateFromStrToOP1(aStr);
+            Operation operation = CmpFile.translateFromStrToOP(aStr);
             if (operation != null) {
                 if (processArrayList.size() <= operation.proc) {
                     Process process = new Process(operation.proc);
@@ -94,6 +98,11 @@ public class Program {
         return processArrayList;
     }
 
+    public void setMatchTables() {
+        MatchPairs matchPairs = new MatchPairs(this);
+        this.matchTables = matchPairs.matchTables;
+    }
+
     public void printMatchPairs() {
         System.out.println("MATCH PAIRS IS SHOWN AS FOLLOWING :");
         for (Operation R : matchTables.keySet()) {
@@ -124,16 +133,16 @@ public class Program {
         }
     }
 
+    public boolean isCheckInfiniteBuffer(){
+        return checkInfiniteBuffer;
+    }
 
     public static void main(String[] args) {
-        Program program = new Program("./src/test/fixtures/5.txt");
+        Program program = new Program("./src/test/fixtures/2.txt");
         program.printALLOperations();
         program.printMatchPairs();
     }
 
-    public boolean isCheckInfiniteBuffer(){
-        return checkInfiniteBuffer;
-    }
 
 
 

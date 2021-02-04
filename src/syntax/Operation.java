@@ -59,4 +59,8 @@ public class Operation {
     public boolean isBarrier() { return (this.type == OPTypeEnum.BARRIER); }
 
     public boolean isBot() { return (this.type == OPTypeEnum.BOT); }
+
+    public String getStrInfo(){
+        return this.type+" "+this.proc+"_"+this.rank+" ";
+    }
 }

@@ -12,16 +12,26 @@ import java.util.Set;
 public class HBRelations {
     /**
      * generate the Happens-Before Relations
+     * 1. process order
+     * 2. queue order
+     * 3. match order
      *
      * @param program
      * @return HashTable<Operation, Set<Operation>>
      */
 
-    public static Hashtable<Operation, Set<Operation>> generatHBRelations(Program program) {
-        Hashtable<Operation, Set<Operation>> HBTables = new Hashtable<>();
+    public Hashtable<Operation, Set<Operation>> HBTables;
+    Program program;
+
+    public HBRelations(Program program){
+        this.program = program;
+        HBTables = new Hashtable<Operation, Set<Operation>>();
+        generatHBRelations(this.program);
+    }
+
+    public Hashtable<Operation, Set<Operation>> generatHBRelations(Program program) {
         Operation lastR = null;
         Hashtable<Integer, Operation> lastS = new Hashtable<>();
-        Hashtable<Integer, Operation> firstS = new Hashtable<>();
 
         for (Process process : program.processArrayList) {
             for (Operation operation : process.ops) {
@@ -39,12 +49,10 @@ public class HBRelations {
                         HBTables.get(lastS.get(dest)).add(operation);
                     }
                     lastS.clear();
-                    firstS.clear();
-                    if (operation.type == OPTypeEnum.RECV) lastR = operation;//if r is blocking then lastr is it;
+                    lastR = operation;//if r is blocking then lastr is it;
                 }
                 //if operation is a WAIT
                 if (operation.type == OPTypeEnum.WAIT) {
-                    //question:there has a wait which waiting for more than one Recv or other operations (????)
                     if (operation.req.isRecv()) {
                         if (lastR != null) {
                             HBTables.get(lastR).add(operation.req);

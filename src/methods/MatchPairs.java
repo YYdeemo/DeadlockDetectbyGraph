@@ -23,8 +23,16 @@ public class MatchPairs {
      * @param program
      * @return HashTable<Send, LinkedList < Recv>>;
      */
-    public static Hashtable<Operation, LinkedList<Operation>> overApproximateMatchs(Program program) {
-        Hashtable<Operation, LinkedList<Operation>> matchTables = new Hashtable<>();
+
+    public Hashtable<Operation, LinkedList<Operation>> matchTables;
+    Program program;
+
+    public MatchPairs(Program program){
+        this.program = program;
+        matchTables = new Hashtable<Operation, LinkedList<Operation>>();
+        overApproximateMatchs(this.program);
+    }
+    public Hashtable<Operation, LinkedList<Operation>> overApproximateMatchs(Program program) {
         //put each send operation to the specific list
         LinkedList<Operation>[][] sendList = new LinkedList[program.getSize()][program.getSize()];
         for (Process process : program.getAllProcesses()) {
