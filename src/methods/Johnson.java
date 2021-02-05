@@ -127,8 +127,8 @@ public class Johnson {
             if (w == startvertex) {// find the circle
                 if (stack.size() > 2) {
 
-                    if (isALLNocomm(stack))
-                        continue continuepoint;
+//                    if (isALLNocomm(stack))
+//                        continue continuepoint;
 
                     count_cut = count_cut + stack.size();
                     Pattern pattern = new Pattern(graph, stack);//get the pattern from the circle
@@ -242,16 +242,6 @@ public class Johnson {
         }
     }
 
-    public boolean isALLNocomm(Stack<Operation> stack) {
-        boolean isallNocomm = true;
-        for (Operation op : stack) {
-            if (!(op.type.equals(OPTypeEnum.NOCOMM))) {
-                isallNocomm = false;
-                break;
-            }
-        }
-        return isallNocomm;
-    }
 
     public LinkedList<Pattern> getPatterns() {
         return patterns;

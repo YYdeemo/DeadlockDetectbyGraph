@@ -32,6 +32,13 @@ public class Operation {
         Nearstwait = null;
     }
 
+    public Operation(OPTypeEnum type, int index, int proc, int group) {
+        this.type = type;
+        this.index = index;
+        this.proc = proc;
+        this.group = group;
+    }
+
     public Operation(OPTypeEnum type, int index, int proc) {
         this.type = type;
         this.index = index;

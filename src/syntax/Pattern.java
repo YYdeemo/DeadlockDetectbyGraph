@@ -21,14 +21,14 @@ public class Pattern {
             }
 
             int opEP = op.proc;
-            int opOrder = op.type.equals(OPTypeEnum.NOCOMM) ? graph.program.processArrayList.get(op.proc).Size() : op.rank;
+            int opOrder = op.type.equals(OPTypeEnum.BARRIER) ? graph.program.processArrayList.get(op.proc).Size() : op.rank;
 
             if (!pattern.containsKey(opEP)) {
                 pattern.put(opEP, op);
                 continue;
             }
             //only keep the operation with lowest rank on each process
-            int order = pattern.get(opEP).type.equals(OPTypeEnum.NOCOMM) ? graph.program.processArrayList.get(pattern.get(opEP).proc).Size() : pattern.get(opEP).rank;
+            int order = pattern.get(opEP).type.equals(OPTypeEnum.BARRIER) ? graph.program.processArrayList.get(pattern.get(opEP).proc).Size() : pattern.get(opEP).rank;
 
             if (order > opOrder)
                 pattern.put(opEP, op);

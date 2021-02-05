@@ -1,10 +1,8 @@
 package methods;
 
 import constant.OPTypeEnum;
-import jdk.nashorn.internal.runtime.regexp.joni.constants.OPCode;
 import syntax.Operation;
 import syntax.Pattern;
-import syntax.Process;
 import syntax.Program;
 
 import java.util.HashMap;
@@ -44,22 +42,22 @@ public class AbstractMachine {
     }
 
     public void Initialize(){
-        tracker = new int[program.size];
-        indicator = new int[program.size];
+        tracker = new int[program.getSize()];
+        indicator = new int[program.getSize()];
         deadlockFound = false;
         sendNums = new HashMap<Integer, HashMap<Integer, Integer>>();
         recvNums = new HashMap<Integer, HashMap<Integer, Integer>>();
-        lastrInShape = new int[program.size];
-        lastsInShape = new int[program.size][program.size];
+        lastrInShape = new int[program.getSize()];
+        lastsInShape = new int[program.getSize()][program.getSize()];
         witnessedRecv = new HashMap<Operation, LinkedList<Operation>>(); //used to record the receives that are witnessed<Wait, List<Recv>>
 
-        for (int i = 0; i < program.size; i++) {
+        for (int i = 0; i < program.getSize(); i++) {
             lastrInShape[i] = -1;
-            for (int j = 0; j < program.size; j++)
+            for (int j = 0; j < program.getSize(); j++)
                 lastsInShape[i][j] = -1;
         }
         //initialize each indicator of process
-        for (int i = 0; i < program.size; i++) {
+        for (int i = 0; i < program.getSize(); i++) {
             if (!pattern.containsKey(i)) {
                 indicator[i] = program.processArrayList.get(i).NextBlockPoint();
             } else {
@@ -72,7 +70,7 @@ public class AbstractMachine {
     boolean schedulable(Hashtable<Integer, Operation> pattern)
     {
         boolean reachpatternpoint = true;
-        for(int i = 0; i < program.size; i++) {
+        for(int i = 0; i < program.getSize(); i++) {
             int rank = program.get(i).rank;
             //if process does not reach the end of each process
             if (tracker[rank] < indicator[rank] || (indicator[rank] == 0 && tracker[rank] == 0)) {
@@ -83,7 +81,7 @@ public class AbstractMachine {
                     reachpatternpoint = false;
                 }
                 //if op is not block, then return TRUE
-                if (!op.isBlock()) return true;
+                if (!(op.isWait()||op.isBarrier())) return true;
 
                 if (op.isRecv()) {
                     //if recv is non-blocking, return true
@@ -131,26 +129,11 @@ public class AbstractMachine {
     }
 
     void scheduling(Hashtable<Integer, Operation> pattern){
-        for (int p = 0; p < program.size; p++) {
+        for (int p = 0; p < program.getSize(); p++) {
             //tracker = 0 and indicator = 0
             if (tracker[p] == 0 && indicator[p] == 0) {
                 Operation op = program.get(p).getOP(tracker[p]);
                 //generate entry in recvNums for a indicator receive
-                if (op.isRecv() && op.isBlock()) {
-                    if (!recvNums.containsKey(op.dst))
-                        recvNums.put(op.dst, new HashMap<Integer, Integer>());
-
-                    if (!recvNums.get(op.dst).containsKey(op.src))
-                        recvNums.get(op.dst).put(op.src, 0);
-
-                    if (checkAvailable(op)) {
-                        recvNums.get(op.dst).put(op.src, recvNums.get(op.dst).get(op.src) + 1);
-                        tracker[p]++;
-                    } else //when recv can not be matched, scheduling stops for this process
-                    {
-                        continue;
-                    }
-                }
             }
 
             // tracker >= indicator  process has no operation left until indicator
@@ -181,7 +164,7 @@ public class AbstractMachine {
 
         lastrInShape[dest] = recv.rank;
 
-        if (recv.isBlock()) {
+        if (false) {//recv.isBlock()
             if (!recvNums.containsKey(dest)) recvNums.put(dest, new HashMap<Integer, Integer>());
 
             if (!recvNums.get(dest).containsKey(src)) recvNums.get(dest).put(src, 0);
