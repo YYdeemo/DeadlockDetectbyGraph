@@ -9,13 +9,13 @@ public class Pattern {
 
     public Hashtable<Integer, Operation> pattern;
     public Graph graph;
-    public boolean isDeadlockCandidate;
+    public boolean DeadlockCandidate;
 
     public Pattern(Graph graph, Stack<Operation> stack){
         this.graph = graph;
         pattern = new Hashtable<Integer, Operation>();
         for (Operation op : stack) {
-            if (graph.isCheckInfiniteBuffer()) {
+            if (graph.program.isCheckInfiniteBuffer()) {
                 if (op.isSend())
                     continue;
             }
@@ -41,5 +41,13 @@ public class Pattern {
 
     public int getSize(){
         return pattern.size();
+    }
+
+    public void setDeadlockCandidate(boolean deadlockCandidate) {
+        DeadlockCandidate = deadlockCandidate;
+    }
+
+    public boolean isDeadlockCandidate() {
+        return DeadlockCandidate;
     }
 }
