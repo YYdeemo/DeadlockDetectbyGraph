@@ -1,6 +1,7 @@
 package syntax;
 
 import constant.OPTypeEnum;
+import javafx.util.Pair;
 
 /**
  *
@@ -69,5 +70,11 @@ public class Operation {
 
     public String getStrInfo(){
         return this.type+" "+this.proc+"_"+this.rank+" ";
+    }
+
+    public int getHashCode(){
+        //this hash code depends dst and src;
+        Pair<Integer, Integer> pair = new Pair<>(this.dst, this.src);
+        return pair.hashCode();
     }
 }
