@@ -33,8 +33,9 @@ public class Finder {
         AbstractMachine abstractMachine = new AbstractMachine(program, patterns.getFirst());
         while(!abstractMachine.deadlockFound){
             i++;
-            abstractMachine.Initialize();
-            abstractMachine.checkPattern(patterns.get(i).pattern);
+            if(abstractMachine.execute(patterns.get(i).pattern)){
+                System.out.println("find the candidate");
+            }
         }
 
 

@@ -102,7 +102,7 @@ public class Johnson {
         }
         stack.push(vertex);
         //block_count count the number of operations besides the sends which in infinite buffer (<pro.rank, num>)
-        if (!(graph.isCheckInfiniteBuffer() && vertex.isSend())) {//TRUE:not infinite & send / not send /not infinite and not send
+        if (!(graph.program.isCheckInfiniteBuffer() && vertex.isSend())) {//TRUE:not infinite & send / not send /not infinite and not send
             if (!block_count.containsKey(vertex.proc))
                 block_count.put(vertex.proc, 1);
             else block_count.put(vertex.proc, block_count.get(vertex.proc) + 1);
@@ -166,7 +166,7 @@ public class Johnson {
         }
         stack.pop();
 
-        if (!(graph.isCheckInfiniteBuffer() && vertex.isSend())) {
+        if (!(graph.program.isCheckInfiniteBuffer() && vertex.isSend())) {
             block_count.put(vertex.proc, block_count.get(vertex.proc) - 1);
         }
 
@@ -179,7 +179,7 @@ public class Johnson {
             return true;
 
         //if infinite buffer, the first action in any process should not be a send
-        if (graph.isCheckInfiniteBuffer() && w.isSend())
+        if (graph.program.isCheckInfiniteBuffer() && w.isSend())
             return false;
 
         //if(w.process.getRank() != s.process.getRank() && proc_stack.contains(w.process.getRank()))
