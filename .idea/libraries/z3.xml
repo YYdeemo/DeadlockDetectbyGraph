@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="z3">
+    <CLASSES />
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$USER_HOME$/Downloads/z3-4.8.10-x64-osx-10.15.7" />
+    </SOURCES>
+    <jarDirectory url="file://$USER_HOME$/Downloads/z3-4.8.10-x64-osx-10.15.7" recursive="false" type="SOURCES" />
+  </library>
+</component>

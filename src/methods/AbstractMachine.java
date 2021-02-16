@@ -12,6 +12,7 @@ import java.util.LinkedList;
 public class AbstractMachine {
 
     public Hashtable<Integer, Operation> pattern;
+    public Pattern candidate;
     public Program program;
 
     int tracker[];
@@ -21,6 +22,7 @@ public class AbstractMachine {
 
     public AbstractMachine(Program program, Pattern pattern){
         this.program = program;
+        this.candidate = pattern;
         this.pattern = pattern.pattern;
         deadlockFound = false;
     }

@@ -21,7 +21,9 @@ import java.util.*;
  */
 public class Program {
     public ArrayList<Process> processArrayList;
-    public Hashtable<Operation, LinkedList<Operation>> matchTables;
+    public Hashtable<Operation, LinkedList<Operation>> matchTables;//all matches like: <r.s>
+    public Hashtable<Operation, LinkedList<Operation>> matchTablesForS;//all matches like: <s,r>
+
     public Hashtable<Operation, Set<Operation>> HBTables;
     public MatchOrder matchOrder;
     public boolean checkInfiniteBuffer = true;
@@ -101,6 +103,17 @@ public class Program {
     public void setMatchTables() {
         MatchPairs matchPairs = new MatchPairs(this);
         this.matchTables = matchPairs.matchTables;
+        if(!matchTables.isEmpty()) setMatchTablesForS();
+    }
+
+    public void setMatchTablesForS() {
+        matchTablesForS = new Hashtable<Operation, LinkedList<Operation>>();
+        for(Operation recv : matchTables.keySet()){
+            for(Operation send : matchTables.get(recv)){
+                if(!matchTablesForS.containsKey(send)) matchTablesForS.put(send, new LinkedList<Operation>());
+                matchTablesForS.get(send).add(recv);
+            }
+        }
     }
 
     public void printMatchPairs() {

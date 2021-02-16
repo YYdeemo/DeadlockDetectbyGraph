@@ -2,13 +2,20 @@ package syntax;
 
 import constant.OPTypeEnum;
 
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Set;
 import java.util.Stack;
 
 public class Pattern {
 
     public Hashtable<Integer, Operation> pattern;
     public Graph graph;
+
+    public Set<Integer> deadlockPros;
+    public Set<Operation> deadlockReqs;
+
+    public int[] tracker;//generate by abstract machine, which record the stop action's rank in each process;
     public boolean DeadlockCandidate;
 
     public Pattern(Graph graph, Stack<Operation> stack){
@@ -33,6 +40,36 @@ public class Pattern {
             if (order > opOrder)
                 pattern.put(opEP, op);
         }
+        setDeadlockProcs();
+        setDeadlockReqs();
+    }
+
+    void setDeadlockProcs() {
+        if(pattern.isEmpty()){
+            deadlockPros = new HashSet<>();
+            for(int i = 0; i<graph.program.getSize(); i++){
+                deadlockPros.add(i);
+            }
+        }else{
+            this.deadlockPros = pattern.keySet();
+        }
+    }
+
+    public Set<Integer> getDeadlockPros() {
+        return deadlockPros;
+    }
+
+    public void setDeadlockReqs() {
+        deadlockReqs = new HashSet<Operation>();
+        for(Operation operation : pattern.values()){
+            if(operation.isWait()){
+                deadlockReqs.add(operation.req);
+            }
+        }
+    }
+
+    public Set<Operation> getDeadlockReqs() {
+        return deadlockReqs;
     }
 
     public Hashtable<Integer, Operation> getPattern() {
