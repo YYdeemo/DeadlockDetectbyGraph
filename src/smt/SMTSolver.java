@@ -22,7 +22,7 @@ public class SMTSolver {
 
     public Hashtable<Operation, Hashtable<String, Expr>> encodeResult;//<operation ,<t,m,w,c>>
     Context ctx;
-    Solver s;
+    Solver solver;
 
 
     public final String t = "t";
@@ -39,11 +39,16 @@ public class SMTSolver {
 
     public void initialize() throws Z3Exception {
         ctx = new Context();
+        solver = ctx.mkSolver();
         encodeResult = new Hashtable<Operation, Hashtable<String, Expr>>();
-        initProgram();
+        encodeProgram();
     }
 
-    void initProgram() throws Z3Exception {
+    /**
+     * encode each operation in acts
+     * @throws Z3Exception
+     */
+    void encodeProgram() throws Z3Exception {
         initActs();
         for (Operation operation : acts) {
             if (operation.isRecv()) {
@@ -58,6 +63,9 @@ public class SMTSolver {
         }
     }
 
+    /**
+     * the acts contains all the operation which before the control points in each process
+     */
     void initActs() {
         acts = new LinkedList<Operation>();
         for (Process process : program.getAllProcesses()) {
@@ -68,26 +76,122 @@ public class SMTSolver {
         }
     }
 
+    /**
+     *
+     * @return the number of the barriers in acts
+     */
+    int getBarrsNum() {
+        int count = 0;
+        for (Operation operation : acts) {
+            if (operation.isBarrier()) count = count + 1;
+        }
+        return count;
+    }
+
+    /**
+     *
+     * @return the number of the recv and send operation in acts
+     */
+    int getOpsNum() {
+        int count = 0;
+        for (Operation operation : acts) {
+            if (operation.isSend() || operation.isRecv()) count = count + 1;
+        }
+        return count;
+    }
+
+    public Model check(){
+        Hashtable<Integer, Operation> gourps = new Hashtable<Integer, Operation>();
+        LinkedList<Expr> times = new LinkedList<Expr>();
+        for(Operation operation : acts){
+            for(Operation succOp : program.matchOrder.MatchOrderTables.get(operation)){
+                if(succOp.index<candidate.tracker[succOp.proc] && !succOp.isBarrier()){
+                    solver.add(mkCompleteBefore(operation,succOp));
+                }
+            }
+            if(operation.isSend() || operation.isRecv()){
+                times.add(time(operation));
+                solver.add(mkMatchIfComplete(operation));
+                if(operation.Nearstwait != null
+                        && operation.Nearstwait.index<candidate.tracker[operation.proc]){
+                    solver.add(mkNearstWait(operation, operation.Nearstwait));
+                }
+                if(operation.rank>0){
+                    if(operation.isSend()){
+                        int rank = program.sendqs.get(operation.getHashCode()).indexOf(operation);
+                        Operation predOp = program.sendqs.get(operation.getHashCode()).get(rank-1);
+                        solver.add(mkNonOvertacking(predOp, operation));
+                    }
+                }
+            }else if(operation.isWait()){
+                if(candidate.deadlockPros.contains(operation.proc)){
+                    solver.add(mkMustComplete(operation));
+                }
+            }else if(operation.isBarrier()){
+                solver.add(mkMustComplete(operation));
+                if(!gourps.containsKey(operation.group)){
+                    gourps.put(operation.group,operation);
+                    times.add(time(operation));
+                }else{
+                    solver.add(mkBarrGroup(gourps.get(operation.group), operation));
+                }
+            }
+        }
+        for( Operation operation : candidate.pattern.values()){
+            if(operation.isWait()){
+                if(operation.req.isRecv()){
+                    for(Operation matchOp : program.matchTables.get(operation.req)){
+                        solver.add(mkMustComplete(matchOp));
+                    }
+                }
+            }
+        }
+        solver.add(mkUniqueTimes(times));
+        solver.add(mkUniqueMatches());
+        Status result = solver.check();
+        if(result.equals(Status.SATISFIABLE)){
+            return solver.getModel();
+        }
+        return null;
+    }
+
+    /**
+     * recv has four expr: time(intExpr), match(intExpr), wait(intExpr), complete(boolExpr)
+     * @param recv
+     * @return <String, Expr> (t-->time)(m-->match)(w-->wait)(c-->complete)
+     */
     public Hashtable<String, Expr> mkRecv(Operation recv) {
         if (!recv.isRecv()) return null;
         Hashtable<String, Expr> recvExpr = new Hashtable<String, Expr>();
         recvExpr.put("t", ctx.mkIntConst("time" + recv.toString()));
         recvExpr.put("m", ctx.mkIntConst("match" + recv.toString()));
         recvExpr.put("w", ctx.mkIntConst("wait" + recv.toString()));
-        recvExpr.put("c", ctx.mkIntConst("complete" + recv.toString()));
+        recvExpr.put("c", ctx.mkBoolConst("complete" + recv.toString()));
         return recvExpr;
     }
 
+    /**
+     * send has four Expr , same as recv
+     * @param send
+     * @return
+     * @throws Z3Exception
+     */
     public Hashtable<String, Expr> mkSend(Operation send) throws Z3Exception {
         if (!send.isSend()) return null;
         Hashtable<String, Expr> sendExpr = new Hashtable<String, Expr>();
         sendExpr.put("t", ctx.mkIntConst("time" + send.toString()));
         sendExpr.put("m", ctx.mkIntConst("match" + send.toString()));
         sendExpr.put("w", ctx.mkIntConst("wait" + send.toString()));
-        sendExpr.put("c", ctx.mkIntConst("complete" + send.toString()));
+        sendExpr.put("c", ctx.mkBoolConst("complete" + send.toString()));
         return sendExpr;
     }
 
+    /**
+     * wait has two expr : time, complete
+     * @param wait
+     * @return
+     * @throws Z3Exception
+     */
     public Hashtable<String, Expr> mkWait(Operation wait) throws Z3Exception {
         if (!wait.isWait()) return null;
         Hashtable<String, Expr> waitExpr = new Hashtable<String, Expr>();
@@ -96,6 +200,12 @@ public class SMTSolver {
         return waitExpr;
     }
 
+    /**
+     * barrier has two expr : time , complete
+     * @param barr
+     * @return
+     * @throws Z3Exception
+     */
     public Hashtable<String, Expr> mkBarr(Operation barr) throws Z3Exception {
         if (!barr.isBarrier()) return null;
         Hashtable<String, Expr> barrExpr = new Hashtable<String, Expr>();
@@ -104,6 +214,11 @@ public class SMTSolver {
         return barrExpr;
     }
 
+    /**
+     * time(operation)  this function achieve get the operation's time IntExpr
+     * @param operation
+     * @return
+     */
     public Expr time(Operation operation) {
         return encodeResult.get(operation).get(t);
     }
@@ -183,12 +298,26 @@ public class SMTSolver {
         return ctx.mkEq(time(barr1), time(barr2));
     }
 
-    Expr mkUniqueTimes(){
-//        IntExpr[] times = new IntExpr[];
-//        for(Operation operation){
-//
-//        }
-//        ctx.mkDistinct()
+    Expr mkUniqueTimes(LinkedList<Expr> timesList) {
+        Expr[] times = new Expr[timesList.size()];//barriers in a common group have a same time
+        int i = 0;
+        for(Expr t : timesList){
+            times[i] = t;
+            i += 1;
+        }
+        return ctx.mkDistinct(times);
+    }
+
+    Expr mkUniqueMatches() {
+        Expr[] matches = new Expr[getOpsNum()];
+        int rank = 0;
+        for (Operation operation : acts) {
+            if (operation.isRecv() || operation.isSend()) {
+                matches[rank] = match(operation);
+                rank += 1;
+            }
+        }
+        return ctx.mkDistinct(matches);
     }
 
 

@@ -24,8 +24,11 @@ public class Program {
     public Hashtable<Operation, LinkedList<Operation>> matchTables;//all matches like: <r.s>
     public Hashtable<Operation, LinkedList<Operation>> matchTablesForS;//all matches like: <s,r>
 
-    public Hashtable<Operation, Set<Operation>> HBTables;
     public MatchOrder matchOrder;
+
+    public Hashtable<Integer, LinkedList<Operation>> sendqs;
+    public Hashtable<Integer, LinkedList<Operation>> recvqs;
+
     public boolean checkInfiniteBuffer = true;
 
     public Program(String filepath) {
@@ -35,7 +38,9 @@ public class Program {
         setMatchTables();
         matchOrder = new MatchOrder(this);
         matchOrder.printOrderRelation();
-//        HBTables = HBRelations.generatHBRelations(this);
+
+        sendqs = new Hashtable<Integer, LinkedList<Operation>>();
+        recvqs = new Hashtable<Integer, LinkedList<Operation>>();
     }
 
     /*
@@ -54,6 +59,7 @@ public class Program {
                     Process process = new Process(operation.proc);
                     operation.rank = process.ops.size();
                     process.append(operation);
+                    appendOpToQS(operation);//add the send or recv to sendqs or recvqs;
                     processArrayList.add(process);
                 } else {
                     operation.rank = processArrayList.get(operation.proc).Size();
@@ -64,6 +70,17 @@ public class Program {
         cmpOPsInfo();
     }
 
+    void appendOpToQS(Operation operation){
+        if(operation.isSend()){
+            if(!sendqs.containsKey(operation.getHashCode()))
+                sendqs.put(operation.getHashCode(), new LinkedList<Operation>());
+            sendqs.get(operation.getHashCode()).add(operation);
+        }else if(operation.isRecv()){
+            if(!recvqs.containsKey(operation.getHashCode()))
+                recvqs.put(operation.getHashCode(), new LinkedList<Operation>());
+            recvqs.get(operation.getHashCode()).add(operation);
+        }
+    }
     /*
      *   after initialize the program, we have added all the actions to the program,
      *   but not finish the work of completing the info of the actions
