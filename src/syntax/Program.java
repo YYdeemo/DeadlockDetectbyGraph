@@ -39,8 +39,8 @@ public class Program {
         matchOrder = new MatchOrder(this);
         matchOrder.printOrderRelation();
 
-        sendqs = new Hashtable<Integer, LinkedList<Operation>>();
-        recvqs = new Hashtable<Integer, LinkedList<Operation>>();
+        sendqs = new Hashtable<>();
+        recvqs = new Hashtable<>();
     }
 
     /*
@@ -72,12 +72,10 @@ public class Program {
 
     void appendOpToQS(Operation operation){
         if(operation.isSend()){
-            if(!sendqs.containsKey(operation.getHashCode()))
-                sendqs.put(operation.getHashCode(), new LinkedList<Operation>());
+            sendqs.put(operation.getHashCode(), new LinkedList<Operation>());
             sendqs.get(operation.getHashCode()).add(operation);
         }else if(operation.isRecv()){
-            if(!recvqs.containsKey(operation.getHashCode()))
-                recvqs.put(operation.getHashCode(), new LinkedList<Operation>());
+            recvqs.put(operation.getHashCode(), new LinkedList<Operation>());
             recvqs.get(operation.getHashCode()).add(operation);
         }
     }

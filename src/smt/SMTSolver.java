@@ -100,7 +100,7 @@ public class SMTSolver {
         return count;
     }
 
-    public Model check(){
+    public void encode(){
         Hashtable<Integer, Operation> gourps = new Hashtable<Integer, Operation>();
         LinkedList<Expr> times = new LinkedList<Expr>();
         for(Operation operation : acts){
@@ -148,11 +148,14 @@ public class SMTSolver {
         }
         solver.add(mkUniqueTimes(times));
         solver.add(mkUniqueMatches());
-        Status result = solver.check();
-        if(result.equals(Status.SATISFIABLE)){
-            return solver.getModel();
+    }
+
+    public Model check(){
+        if(!solver.check().equals(Status.SATISFIABLE)){
+            System.out.println("UNSAT");
+            return null;
         }
-        return null;
+        return solver.getModel();
     }
 
     /**

@@ -1,5 +1,8 @@
 package methods;
 
+import com.microsoft.z3.Model;
+import constant.Status;
+import smt.SMTSolver;
 import syntax.Graph;
 import syntax.Pattern;
 import syntax.Program;
@@ -29,15 +32,28 @@ public class Finder {
 
         Johnson johnson = new Johnson(graph);
         patterns = johnson.getPatterns();
-        int i = 0;
-        AbstractMachine abstractMachine = new AbstractMachine(program, patterns.getFirst());
-        while(!abstractMachine.deadlockFound){
-            i++;
-            if(abstractMachine.execute(patterns.get(i).pattern)){
-                System.out.println("find the candidate");
+        AbstractMachine abstractMachine;
+        for(Pattern pattern : patterns){
+            abstractMachine = new AbstractMachine(program, pattern);
+            if(abstractMachine.execute()== Status.REACHABLE){
+                System.out.println("ABSTRACT MACHINE CHECK THIS CYCLE IS DEADLOCK CANDIDATE !");
+                SMTSolver solver = new SMTSolver(program, pattern);
+                solver.encode();
+                Model model = solver.check();
+                if(model!=null){
+                    System.out.println("[SAT]:Deadlock detected for ");
+                }else{
+                    System.out.println("[UNSAT]:No deadlock is found for pattern:");
+                    pattern.DeadlockCandidate = false;
+                }
             }
         }
 
+    }
+
+    public static void main(String[] args){
+        Program program = new Program("./src/test/fixtures/2.txt");
+        Finder finder = new Finder(program);
 
     }
 }

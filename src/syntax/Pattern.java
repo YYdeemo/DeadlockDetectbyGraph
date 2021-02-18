@@ -16,7 +16,7 @@ public class Pattern {
     public Set<Operation> deadlockReqs;
 
     public int[] tracker;//generate by abstract machine, which record the stop action's rank in each process;
-    public boolean DeadlockCandidate;
+    public boolean DeadlockCandidate = false;
 
     public Pattern(Graph graph, Stack<Operation> stack){
         this.graph = graph;

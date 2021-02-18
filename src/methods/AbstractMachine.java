@@ -1,6 +1,7 @@
 package methods;
 
 import constant.OPTypeEnum;
+import constant.Status;
 import javafx.util.Pair;
 import syntax.*;
 import syntax.Process;
@@ -27,7 +28,7 @@ public class AbstractMachine {
         deadlockFound = false;
     }
 
-    public boolean execute(Hashtable<Integer, Operation> pattern){
+    public Status execute(){
 //        initialize the variables which used in the Machine
         tracker = new int[program.getSize()];
         indicator = new int[program.getSize()];
@@ -48,7 +49,9 @@ public class AbstractMachine {
 
         while(true){
             int old_tracker[] = tracker.clone();
-            if (reachedControlPoint()){
+            if (reachedControlPoint()==Status.REACHABLE){
+                candidate.tracker = tracker.clone();
+                candidate.DeadlockCandidate = true;
                 return reachedControlPoint();
             }
             for(Process process : program.getAllProcesses()){
@@ -156,12 +159,12 @@ public class AbstractMachine {
             recvQ.pop();
         }
     }
-    boolean reachedControlPoint(){
+    Status reachedControlPoint(){
         for(int i = 0; i< program.getSize(); i++){
-            if(indicator[i] != -1 && indicator[i] != tracker[i]) return false;
+            if(indicator[i] != -1 && indicator[i] != tracker[i]) return Status.UNREACHABLE;
         }
         System.out.println("reach all control points");
-        return true;
+        return Status.REACHABLE;
     }
 
     int totalNUM(HashMap<Integer, HashMap<Integer, Integer>> map, int src, int dest) {
