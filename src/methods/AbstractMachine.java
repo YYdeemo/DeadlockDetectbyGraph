@@ -72,7 +72,7 @@ public class AbstractMachine {
                         sendNums[operation.dst][operation.src]++;
                         if(!sendInShape.containsKey(operation.getHashCode())) sendInShape.put(operation.getHashCode(), new LinkedList<Operation>());
                         sendInShape.get(operation.getHashCode()).add(operation);
-                        sendNums[operation.dst][-1]++;
+                        sendNums[operation.dst][program.getSize()]++;
                         Pair<Integer, Integer> pair = new Pair<>(operation.dst, -1);
                         if(!sendInShape.containsKey(pair.hashCode())) sendInShape.put(pair.hashCode(), new LinkedList<Operation>());
                         sendInShape.get(pair.hashCode()).add(operation);
@@ -97,7 +97,7 @@ public class AbstractMachine {
                                     break;
                                 }
                                 System.out.println("CONSUME THE MATCHES AT :"+req.getStrInfo());
-                                consume(sendQueue,recvQueue,idx+1);
+                                consume(sendInShape.get(operation.getHashCode()),recvInShape.get(operation.getHashCode()),idx+1);
                             }
 
                         }else if (req.isSend()){
@@ -115,10 +115,10 @@ public class AbstractMachine {
                                     break;
                                 }else if(recvQueue.size()>idx){
                                     System.out.println("CONSUME THE MATCHES AT :"+req.getStrInfo());
-                                    consume(sendQueue,recvQueue,idx+1);
+                                    consume(sendInShape.get(operation.getHashCode()),recvInShape.get(operation.getHashCode()),idx+1);
                                 }else{
                                     System.out.println("CONSUME THE WILDCARD MATCHES AT :"+req.getStrInfo());
-                                    consume(wsendQueue,wrecvQueue,widx+1);
+                                    consume(sendInShape.get(pair.hashCode()),recvInShape.get(pair.hashCode()),widx+1);
                                 }
                             }
                         }

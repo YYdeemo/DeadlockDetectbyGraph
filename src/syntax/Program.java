@@ -34,13 +34,15 @@ public class Program {
     public Program(String filepath) {
         //初始化variables！！！
         processArrayList = new ArrayList<>();
+        sendqs = new Hashtable<>();
+        recvqs = new Hashtable<>();
         initializeProgramFromCTP(filepath);
         setMatchTables();
         matchOrder = new MatchOrder(this);
         matchOrder.printOrderRelation();
 
-        sendqs = new Hashtable<>();
-        recvqs = new Hashtable<>();
+
+
     }
 
     /*
@@ -59,7 +61,6 @@ public class Program {
                     Process process = new Process(operation.proc);
                     operation.rank = process.ops.size();
                     process.append(operation);
-                    appendOpToQS(operation);//add the send or recv to sendqs or recvqs;
                     processArrayList.add(process);
                 } else {
                     operation.rank = processArrayList.get(operation.proc).Size();
@@ -72,10 +73,10 @@ public class Program {
 
     void appendOpToQS(Operation operation){
         if(operation.isSend()){
-            sendqs.put(operation.getHashCode(), new LinkedList<Operation>());
+            if(!sendqs.containsKey(operation.getHashCode())) sendqs.put(operation.getHashCode(), new LinkedList<Operation>());
             sendqs.get(operation.getHashCode()).add(operation);
         }else if(operation.isRecv()){
-            recvqs.put(operation.getHashCode(), new LinkedList<Operation>());
+            if(!recvqs.containsKey(operation.getHashCode())) recvqs.put(operation.getHashCode(), new LinkedList<Operation>());
             recvqs.get(operation.getHashCode()).add(operation);
         }
     }
@@ -170,7 +171,6 @@ public class Program {
         program.printALLOperations();
         program.printMatchPairs();
     }
-
 
 
 

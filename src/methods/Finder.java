@@ -29,11 +29,14 @@ public class Finder {
     public Finder(Program program){
         this.program = program;
         this.graph = new Graph(program);
+        this.graph.printGraph();
 
         Johnson johnson = new Johnson(graph);
         patterns = johnson.getPatterns();
+        System.out.println("patterns's number:"+patterns.size());
         AbstractMachine abstractMachine;
         for(Pattern pattern : patterns){
+            pattern.printPattern();
             abstractMachine = new AbstractMachine(program, pattern);
             if(abstractMachine.execute()== Status.REACHABLE){
                 System.out.println("ABSTRACT MACHINE CHECK THIS CYCLE IS DEADLOCK CANDIDATE !");
@@ -52,7 +55,7 @@ public class Finder {
     }
 
     public static void main(String[] args){
-        Program program = new Program("./src/test/fixtures/2.txt");
+        Program program = new Program("./src/test/fixtures/1.txt");
         Finder finder = new Finder(program);
 
     }

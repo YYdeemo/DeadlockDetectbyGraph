@@ -183,6 +183,20 @@ public class Graph {
         return edgeNum;
     }
 
+    public void printGraph(){
+        System.out.println("ALL THE VERTEXES ARE AS FOLLOWS:");
+        for(Operation v : VList){
+            System.out.print(v.getStrInfo()+" ");
+        }
+        System.out.println("THE GRAPH IS LIKE THIS:");
+        for(Operation v : ETable.keySet()){
+            System.out.println(v.getStrInfo()+"-->");
+            for(Operation w : ETable.get(v)){
+                System.out.println(" "+w.getStrInfo()+" ");
+            }
+        }
+    }
+
 
 
 

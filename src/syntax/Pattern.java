@@ -87,4 +87,11 @@ public class Pattern {
     public boolean isDeadlockCandidate() {
         return DeadlockCandidate;
     }
+
+    public void printPattern(){
+        System.out.println("THIS PATTERN IS LIKE THIS:");
+        for(Operation operation : pattern.values()){
+            System.out.print(" "+operation.getStrInfo()+" ");
+        }
+    }
 }
