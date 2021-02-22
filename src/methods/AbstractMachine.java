@@ -72,14 +72,17 @@ public class AbstractMachine {
                         sendNums[operation.dst][operation.src]++;
                         if(!sendInShape.containsKey(operation.getHashCode())) sendInShape.put(operation.getHashCode(), new LinkedList<Operation>());
                         sendInShape.get(operation.getHashCode()).add(operation);
+                        if(!recvInShape.containsKey(operation.getHashCode())) recvInShape.put(operation.getHashCode(), new LinkedList<Operation>());
                         sendNums[operation.dst][program.getSize()]++;
                         Pair<Integer, Integer> pair = new Pair<>(operation.dst, -1);
                         if(!sendInShape.containsKey(pair.hashCode())) sendInShape.put(pair.hashCode(), new LinkedList<Operation>());
                         sendInShape.get(pair.hashCode()).add(operation);
+                        if(!recvInShape.containsKey(pair.hashCode())) recvInShape.put(pair.hashCode(), new LinkedList<Operation>());
                         tracker[process.rank]++;
 
                     }else if (operation.isRecv()){
-                        recvNums[operation.dst][operation.src]++;
+                        if(operation.src==-1) recvNums[operation.dst][program.getSize()]++;
+                        else recvNums[operation.dst][operation.src]++;
                         if(!recvInShape.containsKey(operation.getHashCode())) recvInShape.put(operation.getHashCode(), new LinkedList<Operation>());
                         recvInShape.get(operation.getHashCode()).add(operation);
                         tracker[process.rank]++;
@@ -88,8 +91,8 @@ public class AbstractMachine {
                         Operation req = operation.req;
                         assert req.isRecv() || req.isSend();
                         if(req.isRecv()){
-                            LinkedList<Operation> sendQueue = sendInShape.get(operation.getHashCode());
-                            LinkedList<Operation> recvQueue = recvInShape.get(operation.getHashCode());
+                            LinkedList<Operation> sendQueue = sendInShape.get(req.getHashCode());
+                            LinkedList<Operation> recvQueue = recvInShape.get(req.getHashCode());
                             if(recvQueue.contains(req)){
                                 int idx = recvQueue.indexOf(req);
                                 if(sendQueue.size()<=idx){
@@ -102,9 +105,9 @@ public class AbstractMachine {
 
                         }else if (req.isSend()){
                             Pair<Integer, Integer> pair = new Pair<>(req.dst, -1);
-                            LinkedList<Operation> sendQueue = sendInShape.get(operation.getHashCode());
+                            LinkedList<Operation> sendQueue = sendInShape.get(req.getHashCode());
                             LinkedList<Operation> wsendQueue = sendInShape.get(pair.hashCode());
-                            LinkedList<Operation> recvQueue = recvInShape.get(operation.getHashCode());
+                            LinkedList<Operation> recvQueue = recvInShape.get(req.getHashCode());
                             LinkedList<Operation> wrecvQueue = recvInShape.get(pair.hashCode());
 
                             if(sendQueue.contains(req) && wsendQueue.contains(req)){
