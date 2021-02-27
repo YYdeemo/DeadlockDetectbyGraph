@@ -104,11 +104,15 @@ public class SMTSolver {
         Hashtable<Integer, Operation> gourps = new Hashtable<Integer, Operation>();
         LinkedList<Expr> times = new LinkedList<Expr>();
         for(Operation operation : acts){
-            for(Operation succOp : program.matchOrder.MatchOrderTables.get(operation)){
-                if(succOp.index<candidate.tracker[succOp.proc] && !succOp.isBarrier()){
-                    solver.add(mkCompleteBefore(operation,succOp));
+//            if(operation.isBot()) continue;
+            if(program.matchOrder.MatchOrderTables.containsKey(operation)) {
+                for (Operation succOp : program.matchOrder.MatchOrderTables.get(operation)) {
+                    if (succOp.index < candidate.tracker[succOp.proc] && !succOp.isBarrier()) {
+                        solver.add(mkCompleteBefore(operation, succOp));
+                    }
                 }
             }
+
             if(operation.isSend() || operation.isRecv()){
                 times.add(time(operation));
                 solver.add(mkMatchIfComplete(operation));
@@ -268,16 +272,19 @@ public class SMTSolver {
                 b = (b != null) ? ctx.mkOr(b, a) : a;
             }
         }
+        if(b==null) System.out.println("[ERROR] mkRecvMatch: RETURNS NULL!");
         return b;
     }
 
-    BoolExpr mkSendMatch(Operation send) {
-        BoolExpr b = null;
+    Expr mkSendMatch(Operation send) {
+        Expr b = null;
         for (Operation recv : program.matchTablesForS.get(send)) {
             if (!candidate.deadlockReqs.contains(recv) && recv.index < candidate.tracker[recv.proc]) {
-                BoolExpr a = mkMatch(recv, send);
+                Expr a = mkMatch(recv, send);
+                b = (b != null) ? ctx.mkOr(b, a) : a;
             }
         }
+        if(b==null) System.out.println("[ERROR] mkSendMatch: RETURNS NULL!");
         return b;
     }
 
