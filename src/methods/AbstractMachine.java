@@ -100,7 +100,10 @@ public class AbstractMachine {
                                     break;
                                 }
                                 System.out.println("CONSUME THE MATCHES AT :"+req.getStrInfo());
-                                consume(sendInShape.get(operation.getHashCode()),recvInShape.get(operation.getHashCode()),idx+1);
+                                System.out.println("the sendqs size : "+sendInShape.get(req.getHashCode()).size());
+                                System.out.println("the recvqs size : "+recvInShape.get(req.getHashCode()).size());
+                                System.out.println("the idx  : "+idx);
+                                consume(sendInShape.get(req.getHashCode()),recvInShape.get(req.getHashCode()),idx+1);
                             }
 
                         }else if (req.isSend()){
