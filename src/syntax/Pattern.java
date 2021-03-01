@@ -89,9 +89,9 @@ public class Pattern {
     }
 
     public void printPattern(){
-        System.out.println("THIS PATTERN IS LIKE THIS:");
+        System.out.println("[PATTERN]: THIS PATTERN IS LIKE THIS:");
         for(Operation operation : pattern.values()){
-            System.out.print(" "+operation.getStrInfo()+" ");
+            System.out.print(" "+operation.getStrInfo()+" ++ ");
         }
     }
 }

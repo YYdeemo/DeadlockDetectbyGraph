@@ -55,7 +55,7 @@ public class Finder {
     }
 
     public static void main(String[] args){
-        Program program = new Program("./src/test/fixtures/5.txt");
+        Program program = new Program("./src/test/fixtures/1.txt");
         Finder finder = new Finder(program);
 
     }

@@ -29,6 +29,8 @@ public class Program {
     public Hashtable<Integer, LinkedList<Operation>> sendqs;
     public Hashtable<Integer, LinkedList<Operation>> recvqs;
 
+    public Hashtable<Integer, LinkedList<Operation>> groups;
+
     public boolean checkInfiniteBuffer = true;
 
     public Program(String filepath) {
@@ -36,11 +38,12 @@ public class Program {
         processArrayList = new ArrayList<>();
         sendqs = new Hashtable<>();
         recvqs = new Hashtable<>();
+        groups = new Hashtable<>();
         initializeProgramFromCTP(filepath);
         setMatchTables();
         matchOrder = new MatchOrder(this);
-        matchOrder.printOrderRelation();
-
+//        matchOrder.printOrderRelation();
+        System.out.println("[PROGRAM]:FINISH INIT THE MPI PROGRAM.");
 
 
     }
@@ -65,6 +68,10 @@ public class Program {
                 } else {
                     operation.rank = processArrayList.get(operation.proc).Size();
                     processArrayList.get(operation.proc).append(operation);
+                }
+                if(operation.isBarrier()){
+                    if(!groups.containsKey(operation.group)) groups.put(operation.group,new LinkedList<Operation>());
+                    groups.get(operation.group).add(operation);
                 }
             }//if(op!=null)
         }//while
@@ -133,7 +140,7 @@ public class Program {
     }
 
     public void printMatchPairs() {
-        System.out.println("MATCH PAIRS IS SHOWN AS FOLLOWING :");
+        System.out.println("[MATCH-PAIRS]: MATCH PAIRS IS SHOWN AS FOLLOWING :");
         for (Operation R : matchTables.keySet()) {
             for (Operation S : matchTables.get(R)) {
                 System.out.println("<R"+ R.proc+"_"+ R.index + ", S" + S.proc + "_" + S.index + ">");
@@ -141,8 +148,20 @@ public class Program {
         }
     }
 
+    public void printOps(){
+        System.out.println("[PROGRAM]: ALL THE OPERATIONS ARE : ");
+        for(Process process : processArrayList){
+            System.out.println("Process "+process.rank);
+            for(Operation operation : process.ops){
+                System.out.println("   "+operation.getStrInfo());
+            }
+        }
+
+    }
     public void printALLOperations(){
-        System.out.println("the program:");
+        System.out.println("[PROGRAM]: the program:");
+
+
         for(Process process : processArrayList){
             System.out.println("TYPE P D I");
             for(Operation operation : process.ops){

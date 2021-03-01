@@ -23,12 +23,13 @@ public class Graph {
         bot = new Operation[program.getSize()];
         barr = new Operation[program.getSize()];
         initGraph();
+        System.out.println("[GRAPH]: FINISH INIT GRAPH FROM A PROGRAM");
     }
 
     public void initGraph() {
 
         //generate BOT nodes for all processes
-        addBotVertex();
+        addExtraVertex();
 
         //generate all edges for the graph
         ETable.putAll(program.matchOrder.MatchOrderTables);
@@ -83,30 +84,42 @@ public class Graph {
                 }
             }
         }
-
-        //determine if the final barriers can have incoming edges
+        // match-pair:<r,s>   r --> s and s --> r
+        addEdgesOfMatchPairs();
+        //for the barriers in prim MPI program
         HashSet<Operation> barrs = new HashSet<Operation>();//this barrs save the noComm operations
-        for (Operation barrier : barr) {
-            if (can_reach_outgoing(barrier)) {
-                barrs.add(barrier);
+        for(Integer groupID : program.groups.keySet()){
+            barrs.clear();
+            for(Operation barrier : program.groups.get(groupID)){
+                if(true)
+                    barrs.add(barrier);
             }
-        }
-
-//        the nocomm -> other nocomm
-        for (Operation srcBarr : barr) {
-            if (!ETable.containsKey(srcBarr))
-                ETable.put(srcBarr, new HashSet<Operation>());
-            for (Operation destBarr : barrs) {
-                if (!srcBarr.equals(destBarr)) {
-                    ETable.get(srcBarr).add(destBarr);
+            for(Operation srcBarrier : program.groups.get(groupID)){
+                for(Operation snkBarrier : barrs){
+                    if(!snkBarrier.equals(srcBarrier)){
+                        if(!ETable.containsKey(srcBarrier)) ETable.put(srcBarrier,new HashSet<>());
+                        ETable.get(srcBarrier).add(snkBarrier);
+                    }
                 }
             }
         }
-        // match-pair:<r,s>   r --> s and s --> r
-        addEdgesOfMatchPairs();
+        //for the extra barriers
+        barrs.clear();
+        for (Operation barrier : barr) {
+            if (can_reach_outgoing(barrier))
+                barrs.add(barrier);
+        }
+        for (Operation srcBarrier : barr) {
+            for (Operation snkBarrier : barrs) {
+                if (!snkBarrier.equals(srcBarrier)) {
+                    if (!ETable.containsKey(srcBarrier)) ETable.put(srcBarrier, new HashSet<>());
+                    ETable.get(srcBarrier).add(snkBarrier);
+                }
+            }
+        }
     }
 
-    void addBotVertex(){
+    void addExtraVertex(){
         for(Process process : program.getAllProcesses()){
             barr[process.rank]
                     = new Operation(OPTypeEnum.BARRIER, process.Size(), process.rank, Constants.gourpID);
@@ -196,6 +209,14 @@ public class Graph {
             }
         }
     }
+
+    public static void main(String[] args) {
+        Program program = new Program("./src/test/fixtures/1.txt");
+        Graph graph = new Graph(program);
+        graph.printGraph();
+    }
+
+
 
 
 

@@ -41,7 +41,7 @@ public class Johnson {
         orphaned_paths = new Hashtable<Integer, Operation>();
         block_count = new Hashtable<Integer, Integer>();
         leastSCC = new HashSet<Operation>();
-
+        System.out.println("[JOHNSON]: START FINDING THE CYCLES .");
         find();
     }
 
@@ -127,10 +127,8 @@ public class Johnson {
             if (w == startvertex) {// find the circle
                 if (stack.size() > 2) {
 
-//                    if (isALLNocomm(stack))
-//                        continue continuepoint;
-
                     count_cut = count_cut + stack.size();
+                    printCycles(stack);
                     Pattern pattern = new Pattern(graph, stack);//get the pattern from the circle
 
                     if (pattern.getSize() > 1 && !patterns.contains(pattern)) {
@@ -242,9 +240,25 @@ public class Johnson {
         }
     }
 
-
+    public void printCycles(Stack<Operation> stack){
+        System.out.println("[JOHNSON]: THE CYCLE IS AS FOLLOWING :");
+        for(Operation operation : stack){
+            System.out.print(" "+operation.getStrInfo()+" --> ");
+        }
+        System.out.println(" ");
+    }
     public LinkedList<Pattern> getPatterns() {
         return patterns;
+    }
+
+    public static void main(String[] args) {
+        Program program = new Program("./src/test/fixtures/2.txt");
+        Graph graph = new Graph(program);
+        graph.printGraph();
+        Johnson johnson = new Johnson(graph);
+        for(Pattern pattern : johnson.getPatterns()){
+            pattern.printPattern();
+        }
     }
 }
 

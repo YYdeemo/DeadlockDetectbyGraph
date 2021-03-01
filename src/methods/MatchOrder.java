@@ -66,6 +66,7 @@ public class MatchOrder {
     }
 
     public void printOrderRelation(){
+        System.out.println("[MATCH_ORDER]: THE ALL MATCH ORDER RELATIONS IS :");
         for(Operation op1 : MatchOrderTables.keySet()){
             for(Operation op2 : MatchOrderTables.get(op1)){
                 System.out.println(op1.getStrInfo()+"<mo "+op2.getStrInfo());

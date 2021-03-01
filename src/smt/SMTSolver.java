@@ -70,8 +70,9 @@ public class SMTSolver {
         acts = new LinkedList<Operation>();
         for (Process process : program.getAllProcesses()) {
             for (Operation operation : process.ops) {
-                if (operation.index >= candidate.tracker[process.rank] && operation.isBot()) break;
-                acts.add(operation);
+                if (operation.index < candidate.tracker[process.rank] && !operation.isBot()){
+                    acts.add(operation);
+                }
             }
         }
     }
