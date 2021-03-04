@@ -1,6 +1,7 @@
 package syntax;
 
 import constant.OPTypeEnum;
+import javafx.util.Pair;
 import methods.HBRelations;
 import methods.MatchOrder;
 import methods.MatchPairs;
@@ -187,8 +188,17 @@ public class Program {
 
     public static void main(String[] args) {
         Program program = new Program("./src/test/fixtures/2.txt");
-        program.printALLOperations();
-        program.printMatchPairs();
+//        for(Process process : program.processArrayList){
+//            for(Operation op : process.ops){
+//                System.out.println(op.getStrInfo()+" :  "+op.dst+" "+op.src);
+//                System.out.println("operation 's hashcode: "+op.getHashCode());
+//                Pair<Integer,Integer> pair = new Pair<>(op.dst, op.src);
+//                System.out.println("pair hashcode : "+pair.hashCode());
+//            }
+//        }
+
+//        program.printALLOperations();
+//        program.printMatchPairs();
     }
 
 

@@ -8,18 +8,10 @@ import syntax.Pattern;
 import syntax.Program;
 
 import javax.swing.*;
+import java.io.File;
 import java.util.LinkedList;
+import java.util.logging.FileHandler;
 
-/**
-     * there is a MPI program, so the steps are as following:
-     * 1.init the program
-     * 2.init the graph
-     * 3.we should use the Johnson to find the cycles, where need the TSC to generate the subGraph
-     * 4.if the pattern is found, firstly the pattern should be checked by Abstract Machine
-     * 5.if the Abstract Machine returns TRUE, then the program and pattern should be checked by the SMT solver
-     * 6.if the SMT solver return TRUE, so it is real DEADLOCK;
-     *
-     */
 
 public class Finder {
     public Graph graph;
@@ -29,11 +21,11 @@ public class Finder {
     public Finder(Program program){
         this.program = program;
         this.graph = new Graph(program);
-        this.graph.printGraph();
-
         Johnson johnson = new Johnson(graph);
         patterns = johnson.getPatterns();
-        System.out.println("patterns's number:"+patterns.size());
+
+        System.out.println("[FINDER]: PATTERNS NUMBER IS : "+patterns.size());
+        if(patterns.size()==0) System.out.println("[FINDER]: THERE IS NO PATTEREN!");
         AbstractMachine abstractMachine;
         for(Pattern pattern : patterns){
             pattern.printPattern();
@@ -44,19 +36,29 @@ public class Finder {
                 solver.encode();
                 Model model = solver.check();
                 if(model!=null){
-                    System.out.println("[SAT]:Deadlock detected for ");
+                    System.out.println("[FINDER]: SAT! THE DEADLOCK CANDIDATE IS REAL Deadlock");
                 }else{
-                    System.out.println("[UNSAT]:No deadlock is found for pattern:");
+                    System.out.println("[FINDER]: UNSAT! No deadlock is found for pattern:");
                     pattern.DeadlockCandidate = false;
                 }
             }
         }
-
+        System.out.println("FINISH FIND !");
     }
 
     public static void main(String[] args){
-        Program program = new Program("./src/test/fixtures/1.txt");
-        Finder finder = new Finder(program);
+        String directoryName = "./src/test/fixtures";
+        File Dire = new File(directoryName);
+        for(File file : Dire.listFiles()){
+            if(!file.isDirectory()){
+                System.out.println("-----------------------"+file.getName()+"----------------------");
+                Program program = new Program(file.getPath());
+                Finder finder = new Finder(program);
+            }
+        }
+
+//        Program program = new Program("./src/test/fixtures/2.txt");
+//        Finder finder = new Finder(program);
 
     }
 }

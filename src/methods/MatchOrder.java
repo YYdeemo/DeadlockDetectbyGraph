@@ -6,6 +6,7 @@ import syntax.Process;
 
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.Set;
 
 public class MatchOrder {
@@ -77,5 +78,16 @@ public class MatchOrder {
                 System.out.println(op1.getStrInfo() +"<qo "+op2.getStrInfo());
             }
         }
+    }
+
+    public void printMatchOrderOps(){
+        System.out.println("[MATCHORDER]: ALL OPERATIONS IN MATCH-ORDER KEYSET ARE :");
+        for(Set<Operation> listv : MatchOrderTables.values()){
+            for(Operation operation:listv){
+                System.out.print(" "+operation.getStrInfo()+" ");
+
+            }
+        }
+        System.out.println(" ");
     }
 }

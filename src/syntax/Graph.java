@@ -24,6 +24,7 @@ public class Graph {
         barr = new Operation[program.getSize()];
         initGraph();
         System.out.println("[GRAPH]: FINISH INIT GRAPH FROM A PROGRAM");
+//        VList.sort();
     }
 
     public void initGraph() {
@@ -32,7 +33,13 @@ public class Graph {
         addExtraVertex();
 
         //generate all edges for the graph
-        ETable.putAll(program.matchOrder.MatchOrderTables);
+        for(Operation operation : program.matchOrder.MatchOrderTables.keySet()){
+            for(Operation lop : program.matchOrder.MatchOrderTables.get(operation)){
+                if(!ETable.containsKey(operation)) ETable.put(operation, new HashSet<Operation>());
+                ETable.get(operation).add(lop);
+            }
+        }
+
 
         //Edges generate rules:
         for (Process process : program.processArrayList) {

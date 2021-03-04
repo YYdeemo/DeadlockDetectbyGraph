@@ -93,5 +93,6 @@ public class Pattern {
         for(Operation operation : pattern.values()){
             System.out.print(" "+operation.getStrInfo()+" ++ ");
         }
+        System.out.println(" ");
     }
 }

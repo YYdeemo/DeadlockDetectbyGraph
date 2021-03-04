@@ -60,11 +60,11 @@ public class AbstractMachine {
                     if (tracker[process.rank] == process.Size()) break;
 
                     Operation operation = process.getOP(tracker[process.rank]);
-                    System.out.println("Now THIS STEP EXECUTE TO OP, WHICH IS : "+operation.getStrInfo());
-//                  ???
+                    System.out.println("[ABSTRACT MACHINE]: STEPPING OPERATION : "+operation.getStrInfo());
+//
                     if(tracker[process.rank] == indicator[process.rank]){
                         assert operation.isWait() || operation.isBarrier();
-                        System.out.println("NOW THIS PROCESS STOP AT : "+operation.getStrInfo());
+                        System.out.println("[ABSTRACT MACHINE]: * PROCESS"+process.rank+ "STOP AT "+operation.getStrInfo());
                         break;//stop at this operation which is recorded by the indicator in this process
                     }
 
@@ -96,13 +96,9 @@ public class AbstractMachine {
                             if(recvQueue.contains(req)){
                                 int idx = recvQueue.indexOf(req);
                                 if(sendQueue.size()<=idx){
-                                    System.out.println("MATCHING ACTION "+req.getStrInfo()+" HAS NOT ISSUED!");
+//                                    System.out.println("[ABSTRACT MACHINE]: MATCHING ACTION "+req.getStrInfo()+" HAS NOT ISSUED!");
                                     break;
                                 }
-                                System.out.println("CONSUME THE MATCHES AT :"+req.getStrInfo());
-                                System.out.println("the sendqs size : "+sendInShape.get(req.getHashCode()).size());
-                                System.out.println("the recvqs size : "+recvInShape.get(req.getHashCode()).size());
-                                System.out.println("the idx  : "+idx);
                                 consume(sendInShape.get(req.getHashCode()),recvInShape.get(req.getHashCode()),idx+1);
                             }
 
@@ -117,13 +113,11 @@ public class AbstractMachine {
                                 int idx = sendQueue.indexOf(req);
                                 int widx = wsendQueue.indexOf(req);
                                 if(recvQueue.size()<=idx && wrecvQueue.size()<=widx){
-                                    System.out.println("MATCHING ACTION "+req.getStrInfo()+" HAS NOT ISSUED!");
+//                                    System.out.println("[ABSTRACT MACHINE]: MATCHING ACTION "+req.getStrInfo()+" HAS NOT ISSUED!");
                                     break;
                                 }else if(recvQueue.size()>idx){
-                                    System.out.println("CONSUME THE MATCHES AT :"+req.getStrInfo());
                                     consume(sendInShape.get(operation.getHashCode()),recvInShape.get(operation.getHashCode()),idx+1);
                                 }else{
-                                    System.out.println("CONSUME THE WILDCARD MATCHES AT :"+req.getStrInfo());
                                     consume(sendInShape.get(pair.hashCode()),recvInShape.get(pair.hashCode()),widx+1);
                                 }
                             }
@@ -144,16 +138,17 @@ public class AbstractMachine {
                             }
                         }
                     }else if (operation.isBot()){
+                        System.out.println("[ABSTRACT MACHINE]: ERROR! THERE IS A BOT!");
                         tracker[process.rank]++;
                     }
-                    boolean hasChange = false;
-                    for(int i = 0; i< program.getSize(); i++){
-                        if (old_tracker[process.rank]!=tracker[process.rank]){
-                            hasChange = true;
-                        }
-                    }
-                    if(!hasChange) return reachedControlPoint();
                 }
+                boolean hasChange = false;
+                for (int i = 0; i < program.getSize(); i++) {
+                    if (old_tracker[process.rank] != tracker[process.rank]) {
+                        hasChange = true;
+                    }
+                }
+                if (!hasChange) return reachedControlPoint();
 //                find the deadlock or reach all the control points;
             }
         }
@@ -167,9 +162,13 @@ public class AbstractMachine {
     }
     Status reachedControlPoint(){
         for(int i = 0; i< program.getSize(); i++){
-            if(indicator[i] != -1 && indicator[i] != tracker[i]) return Status.UNREACHABLE;
+            if(indicator[i] != -1 && indicator[i] != tracker[i]){
+                System.out.println("[ABSTRACT MACHINE]: SORRY! CANNOT REACH THE CONTROL POINT!");
+                return Status.UNREACHABLE;
+            }
         }
-        System.out.println("reach all control points");
+        System.out.println("[ABSTRACT MACHINE]: REACH ALL CONTROL POINTS!");
+        candidate.tracker = tracker.clone();
         return Status.REACHABLE;
     }
 
