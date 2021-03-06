@@ -24,7 +24,8 @@ public class Graph {
         barr = new Operation[program.getSize()];
         initGraph();
         System.out.println("[GRAPH]: FINISH INIT GRAPH FROM A PROGRAM");
-//        VList.sort();
+        Collections.sort(VList);
+
     }
 
     public void initGraph() {
@@ -203,24 +204,29 @@ public class Graph {
         return edgeNum;
     }
 
-    public void printGraph(){
-        System.out.println("ALL THE VERTEXES ARE AS FOLLOWS:");
+    public void printGraphVList(){
+        System.out.println("[GRAPH]: ALL THE VERTEXES ARE AS FOLLOWS:");
         for(Operation v : VList){
             System.out.print(v.getStrInfo()+" ");
         }
-        System.out.println("THE GRAPH IS LIKE THIS:");
+        System.out.println(" ");
+
+    }
+    public void printGraphETable(){
+        System.out.println("[GRAPH]: THE GRAPH IS LIKE THIS:");
         for(Operation v : ETable.keySet()){
             System.out.println(v.getStrInfo()+"-->");
             for(Operation w : ETable.get(v)){
-                System.out.println(" "+w.getStrInfo()+" ");
+                System.out.print(" "+w.getStrInfo()+"  ");
             }
+            System.out.println(" ");
         }
     }
 
     public static void main(String[] args) {
         Program program = new Program("./src/test/fixtures/1.txt");
         Graph graph = new Graph(program);
-        graph.printGraph();
+        graph.printGraphVList();
     }
 
 

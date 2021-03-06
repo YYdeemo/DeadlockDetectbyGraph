@@ -42,7 +42,8 @@ public class AbstractMachine {
             if (!pattern.containsKey(i)) {
                 indicator[i] = -1;
             } else {
-                indicator[i] = program.processArrayList.get(i).ToPoint(pattern.get(i));
+                indicator[i] = pattern.get(i).rank;
+//                indicator[i] = program.processArrayList.get(i).ToPoint(pattern.get(i));
             }
             tracker[i] = 0;
         }
@@ -52,8 +53,9 @@ public class AbstractMachine {
             if (reachedControlPoint()==Status.REACHABLE){
                 candidate.tracker = tracker.clone();
                 candidate.DeadlockCandidate = true;
-                return reachedControlPoint();
+                return Status.REACHABLE;
             }
+            System.out.println("***NOW "+tracker[0]+" "+tracker[1]+"  "+tracker[2]);
             for(Process process : program.getAllProcesses()){
                 while(true){
 //                    tracker reach the end of the process
@@ -64,7 +66,7 @@ public class AbstractMachine {
 //
                     if(tracker[process.rank] == indicator[process.rank]){
                         assert operation.isWait() || operation.isBarrier();
-                        System.out.println("[ABSTRACT MACHINE]: * PROCESS"+process.rank+ "STOP AT "+operation.getStrInfo());
+                        System.out.println("[ABSTRACT MACHINE]: * NOW PROCESS "+process.rank+ " STOP AT "+operation.getStrInfo());
                         break;//stop at this operation which is recorded by the indicator in this process
                     }
 
@@ -146,6 +148,7 @@ public class AbstractMachine {
                 for (int i = 0; i < program.getSize(); i++) {
                     if (old_tracker[process.rank] != tracker[process.rank]) {
                         hasChange = true;
+                        break;
                     }
                 }
                 if (!hasChange) return reachedControlPoint();
@@ -156,14 +159,15 @@ public class AbstractMachine {
 
     void consume(LinkedList<Operation> sendQ, LinkedList<Operation> recvQ, int idx){
         for(int i = 0; i<idx; i++){
-            sendQ.pop();
-            recvQ.pop();
+            Operation send = sendQ.pop();
+            Operation recv = recvQ.pop();
+            System.out.println("[CONSUME]:  "+send.getStrInfo()+" <--> "+recv.getStrInfo());
         }
     }
     Status reachedControlPoint(){
         for(int i = 0; i< program.getSize(); i++){
             if(indicator[i] != -1 && indicator[i] != tracker[i]){
-                System.out.println("[ABSTRACT MACHINE]: SORRY! CANNOT REACH THE CONTROL POINT!");
+//                System.out.println("[ABSTRACT MACHINE]: SORRY! CANNOT REACH THE CONTROL POINT!");
                 return Status.UNREACHABLE;
             }
         }

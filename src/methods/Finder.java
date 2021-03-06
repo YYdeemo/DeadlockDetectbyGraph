@@ -21,6 +21,7 @@ public class Finder {
     public Finder(Program program){
         this.program = program;
         this.graph = new Graph(program);
+//        graph.printGraphETable();
         Johnson johnson = new Johnson(graph);
         patterns = johnson.getPatterns();
 
@@ -31,7 +32,7 @@ public class Finder {
             pattern.printPattern();
             abstractMachine = new AbstractMachine(program, pattern);
             if(abstractMachine.execute()== Status.REACHABLE){
-                System.out.println("ABSTRACT MACHINE CHECK THIS CYCLE IS DEADLOCK CANDIDATE !");
+                System.out.println("[ABSTRACT MACHINE] YES! CHECK THIS CYCLE IS DEADLOCK CANDIDATE!");
                 SMTSolver solver = new SMTSolver(program, pattern);
                 solver.encode();
                 Model model = solver.check();
@@ -41,24 +42,26 @@ public class Finder {
                     System.out.println("[FINDER]: UNSAT! No deadlock is found for pattern:");
                     pattern.DeadlockCandidate = false;
                 }
+            }else{
+                System.out.println("CANNOT! ABSTRACT MACHINE CANNOT REACH THE CONTROL POINTS!");
             }
         }
         System.out.println("FINISH FIND !");
     }
 
     public static void main(String[] args){
-        String directoryName = "./src/test/fixtures";
-        File Dire = new File(directoryName);
-        for(File file : Dire.listFiles()){
-            if(!file.isDirectory()){
-                System.out.println("-----------------------"+file.getName()+"----------------------");
-                Program program = new Program(file.getPath());
-                Finder finder = new Finder(program);
-            }
-        }
+//        String directoryName = "./src/test/fixtures";
+//        File Dire = new File(directoryName);
+//        for(File file : Dire.listFiles()){
+//            if(!file.isDirectory()){
+//                System.out.println("-----------------------"+file.getName()+"----------------------");
+//                Program program = new Program(file.getPath());
+//                Finder finder = new Finder(program);
+//            }
+//        }
 
-//        Program program = new Program("./src/test/fixtures/2.txt");
-//        Finder finder = new Finder(program);
+        Program program = new Program("./src/test/fixtures/2.txt");
+        Finder finder = new Finder(program);
 
     }
 }

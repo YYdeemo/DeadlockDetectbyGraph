@@ -254,7 +254,7 @@ public class Johnson {
     public static void main(String[] args) {
         Program program = new Program("./src/test/fixtures/2.txt");
         Graph graph = new Graph(program);
-        graph.printGraph();
+        graph.printGraphVList();
         Johnson johnson = new Johnson(graph);
         for(Pattern pattern : johnson.getPatterns()){
             pattern.printPattern();

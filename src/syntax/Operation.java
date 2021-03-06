@@ -6,7 +6,7 @@ import javafx.util.Pair;
 /**
  *
  */
-public class Operation {
+public class Operation implements Comparable{
     public int index;//the rank of each action in same type actions process[for example: r.rank = process.rlist.indexof(r)]
     public int indx;//index in process
     public int rank;//the rank of the process, Line number
@@ -77,4 +77,12 @@ public class Operation {
         Pair<Integer, Integer> pair = new Pair<>(this.dst, this.src);
         return pair.hashCode();
     }
+
+    @Override
+    public int compareTo(Object op) {
+        int compareRank = ((Operation) op).rank;
+        return this.rank-compareRank;
+    }
+
+
 }
