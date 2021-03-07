@@ -50,7 +50,7 @@ public class MatchOrder {
     boolean isQueueOrder(Operation op1, Operation op2){
         if(isProcessOrder(op1, op2)) {
             if (op1.isRecv() && op2.isRecv()) {
-                if (op1.src == op2.src || op1.src == -1 || op2.src == -1) return true;
+                if (op1.src == op2.src || op1.src == -1 ) return true;
             }
             if (op1.isSend() && op2.isSend()) {
                 if (op1.dst == op2.dst) return true;
@@ -61,10 +61,12 @@ public class MatchOrder {
 
     boolean isMatchOrder(Operation op1, Operation op2){
         if(isProcessOrder(op1,op2)){
-            if(isQueueOrder(op1, op2)) return true;
-            if(op2.isWait() || op2.isBarrier()) return true;
-            if(checkInfiniteBuffer && op1.isRecv() && op2.isWait() && op2.req == op1) return true;
-            if((!checkInfiniteBuffer) && (op1.isSend()||op1.isRecv()) && op2.isWait() && op2.req == op1) return true;
+            if(isQueueOrder(op1, op2)) return true;//match order rule1
+            if((op1.isWait() && op1.req.isRecv()) || (op1.isWait() && op1.isSend() && (!checkInfiniteBuffer))) return true;//rule2
+            if(op1.isBarrier()) return true;//rule2
+            //rule3:
+            if(op1.isRecv() && op2.isWait() && op2.req == op1) return true;//infinite buffer: only recv
+            if((!checkInfiniteBuffer) && op1.isSend() && op2.isWait() && op2.req == op1) return true;//zero buffer: send and recv both should wait
         }
         return false;
     }

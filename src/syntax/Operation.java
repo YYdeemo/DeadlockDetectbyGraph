@@ -33,16 +33,18 @@ public class Operation implements Comparable{
         Nearstwait = null;
     }
 
-    public Operation(OPTypeEnum type, int rank, int proc, int group) {
+    public Operation(OPTypeEnum type, int rank, int indx, int proc, int group) {
         this.type = type;
         this.rank = rank;
+        this.indx = indx;
         this.proc = proc;
         this.group = group;
     }
 
-    public Operation(OPTypeEnum type, int rank, int proc) {
+    public Operation(OPTypeEnum type, int rank, int indx, int proc) {
         this.type = type;
         this.rank = rank;
+        this.indx = indx;
         this.proc = proc;
     }
 
@@ -61,6 +63,9 @@ public class Operation implements Comparable{
     public boolean isRecv() {
         return (this.type == OPTypeEnum.RECV);
     }
+    public boolean isIRecv() {
+        return (this.type == OPTypeEnum.B_RECV);
+    }
 
     public boolean isWait() { return (this.type == OPTypeEnum.WAIT); }
 
@@ -69,7 +74,7 @@ public class Operation implements Comparable{
     public boolean isBot() { return (this.type == OPTypeEnum.BOT); }
 
     public String getStrInfo(){
-        return this.type+" "+this.proc+"_"+this.rank+" ";
+        return this.type+" "+this.proc+"_"+this.rank;
     }
 
     public int getHashCode(){
@@ -80,8 +85,8 @@ public class Operation implements Comparable{
 
     @Override
     public int compareTo(Object op) {
-        int compareRank = ((Operation) op).rank;
-        return this.rank-compareRank;
+        int compareRank = ((Operation) op).indx;
+        return this.indx-compareRank;
     }
 
 

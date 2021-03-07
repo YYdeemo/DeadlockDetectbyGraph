@@ -50,6 +50,7 @@ public class MatchPairs {
                     sTotalCountForR += sendList[process.rank][j].size();
             }
             for (Operation recv : process.rlist) {
+                if(!matchTables.containsKey(recv)) matchTables.put(recv, new LinkedList<Operation>());
                 LinkedList<Operation> sforR = new LinkedList<>();//the list of sends which can match with the recv
                 for (int j = 0; j < sendList[process.rank].length; j++) {
                     if (sendList[process.rank][j] == null) continue;

@@ -21,25 +21,13 @@ public class Pattern {
     public Pattern(Graph graph, Stack<Operation> stack){
         this.graph = graph;
         pattern = new Hashtable<Integer, Operation>();
-        for (Operation op : stack) {
-            if (graph.program.isCheckInfiniteBuffer()) {
-                if (op.isSend())
-                    continue;
+        for (Operation op : stack) {//barrier/wait/zero send/Irecv/ can be the control point in a pattern
+            if (op.isWait() || op.isBarrier() || (op.isSend() && (!graph.program.checkInfiniteBuffer)) || (op.isIRecv())) {
+                if (!pattern.containsKey(op.proc)) pattern.put(op.proc, op);
+                if (pattern.containsKey(op.proc) && op.rank < pattern.get(op.proc).rank) pattern.put(op.proc, op);
             }
-
-            int opEP = op.proc;
-            int opOrder = op.type.equals(OPTypeEnum.BARRIER) ? graph.program.processArrayList.get(op.proc).Size() : op.rank;
-
-            if (!pattern.containsKey(opEP)) {
-                pattern.put(opEP, op);
-                continue;
-            }
-            //only keep the operation with lowest rank on each process
-            int order = pattern.get(opEP).type.equals(OPTypeEnum.BARRIER) ? graph.program.processArrayList.get(pattern.get(opEP).proc).Size() : pattern.get(opEP).rank;
-
-            if (order > opOrder)
-                pattern.put(opEP, op);
         }
+
         setDeadlockProcs();
         setDeadlockReqs();
     }

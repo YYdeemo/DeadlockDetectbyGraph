@@ -61,6 +61,7 @@ public class Program {
             aStr = listIterator.next();
             Operation operation = CmpFile.translateFromStrToOP(aStr);
             if (operation != null) {
+                appendOpToQS(operation);
                 if (processArrayList.size() <= operation.proc) {
                     Process process = new Process(operation.proc);
                     operation.rank = process.ops.size();
@@ -95,8 +96,11 @@ public class Program {
      *   the wait action's req and the blocking recv action's nearliest wait is which one
      */
     private void cmpOPsInfo() {
+        int indx = 0;
         for (Process process : processArrayList) {
             for (Operation operation : process.ops) {
+                operation.indx = indx;
+                indx++;
                 operation.rank = process.ops.indexOf(operation);
                 if (operation.type == OPTypeEnum.WAIT) {
                     operation.req = process.ops.get(operation.reqID);
@@ -109,6 +113,7 @@ public class Program {
                     operation.index = process.slist.indexOf(operation);
                 }
             }
+            indx += 2;
         }
     }
 

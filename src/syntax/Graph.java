@@ -129,16 +129,16 @@ public class Graph {
 
     void addExtraVertex(){
         for(Process process : program.getAllProcesses()){
+            int indx = process.getOP(process.ops.size()-1).indx;
             barr[process.rank]
-                    = new Operation(OPTypeEnum.BARRIER, process.Size(), process.rank, Constants.gourpID);
+                    = new Operation(OPTypeEnum.BARRIER, process.Size(), indx+1, process.rank, Constants.gourpID);
             VList.add(barr[process.rank]);
-        }
-
-        for (Process process : program.processArrayList) {
             bot[process.rank]
-                    = new Operation(OPTypeEnum.BOT, process.ops.size()+1, process.rank);
+                    = new Operation(OPTypeEnum.BOT, process.ops.size()+1, indx+2,  process.rank);
             VList.add(bot[process.rank]);
         }
+
+
     }
 
     void addEdgesOfMatchPairs(){
@@ -207,7 +207,7 @@ public class Graph {
     public void printGraphVList(){
         System.out.println("[GRAPH]: ALL THE VERTEXES ARE AS FOLLOWS:");
         for(Operation v : VList){
-            System.out.print(v.getStrInfo()+" ");
+            System.out.print(v.getStrInfo()+"_"+v.indx+" ");
         }
         System.out.println(" ");
 
@@ -224,7 +224,7 @@ public class Graph {
     }
 
     public static void main(String[] args) {
-        Program program = new Program("./src/test/fixtures/1.txt");
+        Program program = new Program("./src/test/fixtures/4.txt");
         Graph graph = new Graph(program);
         graph.printGraphVList();
     }
