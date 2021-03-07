@@ -13,10 +13,12 @@ public class MatchOrder {
 
     public Hashtable<Operation, Set<Operation>> MatchOrderTables;
     public Hashtable<Operation, Set<Operation>> QueueOrderTables;
+    boolean checkInfiniteBuffer;
 
     public MatchOrder(Program program){
         MatchOrderTables = new Hashtable<Operation, Set<Operation>>();
         QueueOrderTables = new Hashtable<Operation, Set<Operation>>();
+        checkInfiniteBuffer = program.checkInfiniteBuffer;
         generateMatchOrder(program);
     }
 
@@ -61,7 +63,8 @@ public class MatchOrder {
         if(isProcessOrder(op1,op2)){
             if(isQueueOrder(op1, op2)) return true;
             if(op2.isWait() || op2.isBarrier()) return true;
-            if((op1.isSend()||op1.isRecv()) && op2.isWait() && op2.req == op1) return true;
+            if(checkInfiniteBuffer && op1.isRecv() && op2.isWait() && op2.req == op1) return true;
+            if((!checkInfiniteBuffer) && (op1.isSend()||op1.isRecv()) && op2.isWait() && op2.req == op1) return true;
         }
         return false;
     }
