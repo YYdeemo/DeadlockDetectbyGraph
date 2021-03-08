@@ -77,10 +77,10 @@ public class Operation implements Comparable{
         return this.type+" "+this.proc+"_"+this.rank;
     }
 
-    public int getHashCode(){
+    public Pair<Integer, Integer> getHashCode(){
         //this hash code depends dst and src;
         Pair<Integer, Integer> pair = new Pair<>(this.dst, this.src);
-        return pair.hashCode();
+        return pair;
     }
 
     @Override

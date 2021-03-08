@@ -52,9 +52,9 @@ public class Process {
             if (ops.get(indicator).type.equals(OPTypeEnum.BARRIER) || ops.get(indicator).type.equals(OPTypeEnum.BOT))
                 break;
 
-            if (ops.get(indicator).isRecv()) {
-                break;
-            }
+//            if (ops.get(indicator).isRecv()) {
+//                break;
+//            }
             //op could be a wait if receives are non-blocking
             if (ops.get(indicator).type.equals(OPTypeEnum.WAIT)) {
                 if (ops.get(indicator).req.isRecv())

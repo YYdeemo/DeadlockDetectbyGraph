@@ -14,9 +14,6 @@ public class Johnson {
      * which achieve finding the cycles in the graph by Johnson
      */
     public Graph graph;
-    //    public Program program;
-    public Operation v;
-    public Operation w;
     public int leastVertex;
     public LinkedList<Pattern> patterns;//which save the fake deadlock candidates
 
@@ -33,6 +30,7 @@ public class Johnson {
 
     public Johnson(Graph graph) {
         this.graph = graph;
+        leastVertex = 0;
         patterns = new LinkedList<Pattern>();
         stack = new Stack<Operation>();
         blocked = new Hashtable<Operation, Boolean>();
@@ -58,7 +56,6 @@ public class Johnson {
                 }
                 orphaned_paths.clear();
                 orphaned.clear();
-
                 circuit(leastSCC, i, i);
                 i++;
             } else {
@@ -128,7 +125,7 @@ public class Johnson {
                 if (stack.size() > 2) {
 
                     count_cut = count_cut + stack.size();
-                    printCycles(stack);
+//                    printCycles(stack);
                     Pattern pattern = new Pattern(graph, stack);//get the pattern from the circle
 
                     if (pattern.getSize() > 1 && !patterns.contains(pattern)) {
@@ -260,6 +257,13 @@ public class Johnson {
             pattern.printPattern();
         }
     }
+
+    public void printleastSCC(Set<Operation> set){
+        for (Operation operation : set){
+            System.out.print(" "+operation.getStrInfo()+" ");
+        }
+        System.out.println(" ");
+    }
 }
 
 class TarjanSCC {
@@ -287,6 +291,9 @@ class TarjanSCC {
         leastSubVectors = null;
         leastvertex = lowerbound;
         low = new int[Vsize];
+        pre = 0;
+        count = 0;
+
 
         int minrank = Integer.MAX_VALUE;
 

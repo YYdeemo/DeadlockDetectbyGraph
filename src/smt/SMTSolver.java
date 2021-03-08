@@ -2,7 +2,6 @@ package smt;
 
 
 import com.microsoft.z3.*;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import syntax.Operation;
 import syntax.Pattern;
 import syntax.Process;
@@ -30,10 +29,13 @@ public class SMTSolver {
     public final String w = "w";
     public final String c = "c";
 
+    public LinkedList<String> ExprList;
+
 
     public SMTSolver(Program program, Pattern pattern) throws Z3Exception {
         this.program = program;
         this.candidate = pattern;
+        ExprList = new LinkedList<>();
         initialize();
     }
 
@@ -61,7 +63,6 @@ public class SMTSolver {
                 encodeResult.put(operation, mkBarr(operation));
             }
         }
-        System.out.println("[SMT-SOLVER]: FINISH ENCODE THE PROGRAM.");
     }
 
     /**
@@ -71,7 +72,7 @@ public class SMTSolver {
         acts = new LinkedList<Operation>();
         for (Process process : program.getAllProcesses()) {
             for (Operation operation : process.ops) {
-                if (operation.rank < candidate.tracker[process.rank] && !operation.isBot()){
+                if (operation.rank < candidate.tracker[process.rank]){
                     acts.add(operation);
                 }
             }
@@ -106,9 +107,9 @@ public class SMTSolver {
         Hashtable<Integer, Operation> gourps = new Hashtable<Integer, Operation>();
         LinkedList<Expr> times = new LinkedList<Expr>();
         for(Operation operation : acts){
-            if(program.matchOrder.MatchOrderTables.containsKey(operation)) {
+            if(program.matchOrder.MatchOrderTables.containsKey(operation)) {//a <mo b
                 for (Operation succOp : program.matchOrder.MatchOrderTables.get(operation)) {
-                    if (succOp.rank < candidate.tracker[succOp.proc] && !succOp.isBarrier()) {
+                    if (succOp.rank < candidate.tracker[succOp.proc] && !succOp.isBot()) {
                         solver.add(mkCompleteBefore(operation, succOp));
                     }
                 }
@@ -124,8 +125,16 @@ public class SMTSolver {
                 if(operation.rank>0){
                     if(operation.isSend()){
                         int rank = program.sendqs.get(operation.getHashCode()).indexOf(operation);
-                        Operation predOp = program.sendqs.get(operation.getHashCode()).get(rank-1);
-                        solver.add(mkNonOvertacking(predOp, operation));
+                        if(rank>1){
+                            Operation predOp = program.sendqs.get(operation.getHashCode()).get(rank-1);
+                            solver.add(mkNonOvertacking(predOp, operation));
+                        }
+                    }else{
+                        int rank = program.recvqs.get(operation.getHashCode()).indexOf(operation);
+                        if(rank>1){
+                            Operation preOp = program.recvqs.get(operation.getHashCode()).get(rank-1);
+                            solver.add(mkNonOvertacking(preOp, operation));
+                        }
                     }
                 }
             }else if(operation.isWait()){
@@ -146,7 +155,8 @@ public class SMTSolver {
             if(operation.isWait()){
                 if(operation.req.isRecv()){
                     for(Operation matchOp : program.matchTables.get(operation.req)){
-                        solver.add(mkMustComplete(matchOp));
+                        if(matchOp.rank < candidate.tracker[matchOp.proc])
+                            solver.add(mkMustComplete(matchOp));
                     }
                 }
             }
@@ -157,7 +167,7 @@ public class SMTSolver {
 
     public Model check(){
         if(!solver.check().equals(Status.SATISFIABLE)){
-            System.out.println("UNSAT");
+//            System.out.println("UNSAT");
             return null;
         }
         return solver.getModel();
@@ -232,7 +242,6 @@ public class SMTSolver {
     }
 
     public Expr match(Operation operation) {
-        System.out.println("ERROR："+operation.getStrInfo());
         return encodeResult.get(operation).get(m);
     }
 
@@ -245,6 +254,7 @@ public class SMTSolver {
     }
 
     public BoolExpr mkMatch(Operation recv, Operation send) throws Z3Exception {
+        addExprToList("match <"+recv.getStrInfo()+" ,"+send.getStrInfo()+">");
         return ctx.mkAnd(
                 ctx.mkEq(match(recv), time(send)),
                 ctx.mkEq(match(send), time(recv)),
@@ -256,6 +266,7 @@ public class SMTSolver {
     }
 
     Expr mkCompleteBefore(Operation a, Operation b) {
+        addExprToList(""+a.getStrInfo()+" <c "+b.getStrInfo());
         return ctx.mkAnd(
                 ctx.mkImplies(complete(b), complete(a)),
                 ctx.mkLt(time(a), time(b))
@@ -263,50 +274,72 @@ public class SMTSolver {
     }
 
     Expr mkMustComplete(Operation operation) {
+        addExprToList(""+ operation.getStrInfo() +".complete = TRUE");
         return ctx.mkEq(complete(operation), ctx.mkBool(true));
     }
 
     BoolExpr mkRecvMatch(Operation recv) {
+        addExprToList("mkRecvMatch: "+ recv.getStrInfo()+" OR :{");
         BoolExpr b = null;
+        if(!program.matchTables.containsKey(recv)){
+//            System.out.println("[ERROR]: THERE IS NO MATCH OPERATION WITH "+recv.getStrInfo());
+            return b;
+        }
         for (Operation send : program.matchTables.get(recv)) {
-            if (!candidate.deadlockReqs.contains(send) && send.rank < candidate.tracker[send.proc]) {
+//            if (!candidate.deadlockReqs.contains(send) && send.rank < candidate.tracker[send.proc]) {
+            if(send.rank < candidate.tracker[send.proc]){
                 BoolExpr a = mkMatch(recv, send);
                 b = (b != null) ? ctx.mkOr(b, a) : a;
             }
         }
-        if(b==null) System.out.println("[ERROR] mkRecvMatch: RETURNS NULL!");
+        addExprToList("}");
+//        if(b==null) System.out.println("[ERROR] mkRecvMatch: RETURNS NULL!");
         return b;
     }
 
     Expr mkSendMatch(Operation send) {
+        addExprToList("mkSendMatch: "+send.getStrInfo() +" OR : {");
         Expr b = null;
+        if(!program.matchTablesForS.containsKey(send)){
+//            System.out.println("[ERROR]: THERE IS NO MATCH OPERATION WITH "+send.getStrInfo());
+            return b;
+        }
         for (Operation recv : program.matchTablesForS.get(send)) {
-            if (!candidate.deadlockReqs.contains(recv) && recv.rank < candidate.tracker[recv.proc]) {
+//            if (!candidate.deadlockReqs.contains(recv) && recv.rank < candidate.tracker[recv.proc]) {
+            if(recv.rank < candidate.tracker[recv.proc]){
                 Expr a = mkMatch(recv, send);
                 b = (b != null) ? ctx.mkOr(b, a) : a;
             }
         }
-        if(b==null) System.out.println("[ERROR] mkSendMatch: RETURNS NULL!");
+        addExprToList("}");
+//        if(b==null) System.out.println("[ERROR] mkSendMatch: RETURNS NULL!");
         return b;
     }
 
     Expr mkMatchIfComplete(Operation operation) {
+        addExprToList(""+ operation.getStrInfo()+".complete -> ");
         if (operation.isSend()) {
-            return ctx.mkImplies(complete(operation), mkSendMatch(operation));
+            Expr sendMatch = mkSendMatch(operation);
+            if(sendMatch!=null) return ctx.mkImplies(complete(operation), sendMatch);
         } else if (operation.isRecv()) {
-            return ctx.mkImplies(complete(operation), mkRecvMatch(operation));
-        } else return null;
+            Expr recvMatch = mkRecvMatch(operation);
+            if(recvMatch!=null) return ctx.mkImplies(complete(operation), recvMatch);
+        }
+        return ctx.mkFalse();//if there is no match operation, so return false ???
     }
 
     Expr mkNonOvertacking(Operation a, Operation b) {
+        addExprToList("(NonOvertacking):" +a.getStrInfo()+" <m "+b.getStrInfo());
         return ctx.mkLt(match(a), match(b));
     }
 
     Expr mkNearstWait(Operation operation, Operation wait) {
+        addExprToList(""+operation.getStrInfo()+".wait = "+wait.getStrInfo()+".time");
         return ctx.mkEq(wait(operation), time(wait));
     }
 
     Expr mkBarrGroup(Operation barr1, Operation barr2) {
+        addExprToList(barr1.getStrInfo()+".time = "+barr2.getStrInfo()+".time");
         return ctx.mkEq(time(barr1), time(barr2));
     }
 
@@ -330,6 +363,16 @@ public class SMTSolver {
             }
         }
         return ctx.mkDistinct(matches);
+    }
+
+    void addExprToList(String strExpr){
+        ExprList.add(strExpr);
+    }
+
+    public void printAllExprs(){
+        for(String str : ExprList){
+            System.out.println(str);
+        }
     }
 
 

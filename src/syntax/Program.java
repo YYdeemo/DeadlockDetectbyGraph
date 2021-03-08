@@ -22,13 +22,13 @@ import java.util.*;
  */
 public class Program {
     public ArrayList<Process> processArrayList;
-    public Hashtable<Operation, LinkedList<Operation>> matchTables;//all matches like: <r.s>
-    public Hashtable<Operation, LinkedList<Operation>> matchTablesForS;//all matches like: <s,r>
+    public Hashtable<Operation, LinkedList<Operation>> matchTables;//all matches like: <r,list<s>>
+    public Hashtable<Operation, LinkedList<Operation>> matchTablesForS;//all matches like: <s,list<r>>
 
     public MatchOrder matchOrder;
 
-    public Hashtable<Integer, LinkedList<Operation>> sendqs;
-    public Hashtable<Integer, LinkedList<Operation>> recvqs;
+    public Hashtable<Pair<Integer, Integer>, LinkedList<Operation>> sendqs;
+    public Hashtable<Pair<Integer, Integer>, LinkedList<Operation>> recvqs;
 
     public Hashtable<Integer, LinkedList<Operation>> groups;
 
@@ -40,6 +40,8 @@ public class Program {
         sendqs = new Hashtable<>();
         recvqs = new Hashtable<>();
         groups = new Hashtable<>();
+        matchTables = new Hashtable<>();
+        matchTablesForS = new Hashtable<>();
         initializeProgramFromCTP(filepath);
         setMatchTables();
         matchOrder = new MatchOrder(this);

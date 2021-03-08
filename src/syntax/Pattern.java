@@ -21,6 +21,9 @@ public class Pattern {
     public Pattern(Graph graph, Stack<Operation> stack){
         this.graph = graph;
         pattern = new Hashtable<Integer, Operation>();
+        deadlockPros = new HashSet<>();
+        deadlockReqs = new HashSet<>();
+        tracker = new int[graph.program.getSize()];
         for (Operation op : stack) {//barrier/wait/zero send/Irecv/ can be the control point in a pattern
             if (op.isWait() || op.isBarrier() || (op.isSend() && (!graph.program.checkInfiniteBuffer)) || (op.isIRecv())) {
                 if (!pattern.containsKey(op.proc)) pattern.put(op.proc, op);
@@ -82,5 +85,9 @@ public class Pattern {
             System.out.print(" "+operation.getStrInfo()+" ++ ");
         }
         System.out.println(" ");
+    }
+
+    public void setTracker(int[] tracker) {
+        this.tracker = tracker;
     }
 }
