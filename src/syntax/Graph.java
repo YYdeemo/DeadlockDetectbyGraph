@@ -34,8 +34,8 @@ public class Graph {
         addExtraVertex();
 
         //generate all edges for the graph
-        for(Operation operation : program.matchOrder.MatchOrderTables.keySet()){
-            for(Operation lop : program.matchOrder.MatchOrderTables.get(operation)){
+        for(Operation operation : program.matchOrderTables.keySet()){
+            for(Operation lop : program.matchOrderTables.get(operation)){
                 if(!ETable.containsKey(operation)) ETable.put(operation, new HashSet<Operation>());
                 ETable.get(operation).add(lop);
             }
@@ -43,7 +43,7 @@ public class Graph {
 
 
         //Edges generate rules:
-        for (Process process : program.processArrayList) {
+        for (Process process : program.processes) {
             //add all vertices_ and partial hb relations from each process
             VList.addAll(process.ops);
 
@@ -82,7 +82,7 @@ public class Graph {
             for (Operation op1 : process.ops) {//rule 3: bot --> Send (Send.dst.process has wildcard recv)
                 if (op1.isSend()) {
                     int dest = op1.dst;
-                    for (Operation op2 : program.processArrayList.get(dest).ops) {
+                    for (Operation op2 : program.processes.get(dest).ops) {
                         if (op2.isRecv() && op2.src == -1) {
                             if (!ETable.containsKey(bot[dest]))
                                 ETable.put(bot[dest], new HashSet<Operation>());
@@ -224,9 +224,11 @@ public class Graph {
     }
 
     public static void main(String[] args) {
-        Program program = new Program("./src/test/fixtures/4.txt");
+        Program program = new Program("./src/test/fixtures/3.txt");
+        NewProgram newProgram = new NewProgram(program);
         Graph graph = new Graph(program);
         graph.printGraphVList();
+        graph.printGraphETable();
     }
 
 

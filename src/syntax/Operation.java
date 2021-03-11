@@ -7,8 +7,8 @@ import javafx.util.Pair;
  *
  */
 public class Operation implements Comparable{
-    public int index;//the rank of each action in same type actions process[for example: r.rank = process.rlist.indexof(r)]
-    public int indx;//index in process
+    public int index;//the rank is index of list which actions with same endpoint
+    public int indx;//index in program, total number, which contains bot and barrier
     public int rank;//the rank of the process, Line number
     public int proc;//the rank of process
     public int src;//source
@@ -20,6 +20,7 @@ public class Operation implements Comparable{
     public OPTypeEnum type;//the type is num : "send", "recv", "wait", "barrier", "bot"
     public Operation Nearstwait;//for a recv or a send, this wait is NearestWait
 //    SendModeEnum sendmode;//the type is num: "ssend", "rsend", "bsend", "tsend"
+    public boolean isCsecOperation = false;
 
     public Operation(OPTypeEnum type, int index, int proc, int src, int dst, int tag, int group, int reqID) {
         this.type = type;
@@ -48,11 +49,6 @@ public class Operation implements Comparable{
         this.proc = proc;
     }
 
-    //log the information of this operation by...
-    public void logOPInfo() {
-
-    }
-
     public boolean isSend() {
         return (this.type == OPTypeEnum.SEND
                 || this.type == OPTypeEnum.STANDARD_SEND
@@ -75,6 +71,10 @@ public class Operation implements Comparable{
 
     public String getStrInfo(){
         return this.type+" "+this.proc+"_"+this.rank;
+    }
+
+    public boolean isCsecOperation() {
+        return isCsecOperation;
     }
 
     public Pair<Integer, Integer> getHashCode(){

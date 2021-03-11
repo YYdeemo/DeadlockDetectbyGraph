@@ -21,11 +21,11 @@ import java.util.*;
  *       3.construct the partial order based on happens-before relation
  */
 public class Program {
-    public ArrayList<Process> processArrayList;
+    public ArrayList<Process> processes;
     public Hashtable<Operation, LinkedList<Operation>> matchTables;//all matches like: <r,list<s>>
     public Hashtable<Operation, LinkedList<Operation>> matchTablesForS;//all matches like: <s,list<r>>
 
-    public MatchOrder matchOrder;
+    public Hashtable<Operation, Set<Operation>> matchOrderTables;
 
     public Hashtable<Pair<Integer, Integer>, LinkedList<Operation>> sendqs;
     public Hashtable<Pair<Integer, Integer>, LinkedList<Operation>> recvqs;
@@ -36,24 +36,36 @@ public class Program {
 
     public Program(String filepath) {
         //初始化variables！！！
-        processArrayList = new ArrayList<>();
+        processes = new ArrayList<>();
         sendqs = new Hashtable<>();
         recvqs = new Hashtable<>();
         groups = new Hashtable<>();
         matchTables = new Hashtable<>();
         matchTablesForS = new Hashtable<>();
+        matchOrderTables = new Hashtable<>();
         initializeProgramFromCTP(filepath);
         setMatchTables();
-        matchOrder = new MatchOrder(this);
-//        matchOrder.printOrderRelation();
+        setMatchOrderTables();
         System.out.println("[PROGRAM]:FINISH INIT THE MPI PROGRAM.");
-
 
     }
 
-    /*
-     *from the file, we create the operations, add them to the process, and add the process to the program
-     *param: filepath
+    public Program(){
+        processes = new ArrayList<>();
+        sendqs = new Hashtable<>();
+        recvqs = new Hashtable<>();
+        groups = new Hashtable<>();
+        matchTables = new Hashtable<>();
+        matchTablesForS = new Hashtable<>();
+        matchOrderTables = new Hashtable<>();
+    }
+
+    /**
+     * from the file, we create the operations, add them to the process, and add the process to the program
+     * after finishing to append all operations, we should complete their info which conclude wait, req, index, rank, indx;
+     * we use the appendOpToQS(), cmpOPsInfo() function to achieve these
+     *
+     * @param: filepath
      */
     private void initializeProgramFromCTP(String filepath) {
         LinkedList<String[]> ctp = CmpFile.getCTPFromFile(filepath);
@@ -64,17 +76,17 @@ public class Program {
             Operation operation = CmpFile.translateFromStrToOP(aStr);
             if (operation != null) {
                 appendOpToQS(operation);
-                if (processArrayList.size() <= operation.proc) {
+                if (processes.size() <= operation.proc) {
                     Process process = new Process(operation.proc);
                     operation.rank = process.ops.size();
                     process.append(operation);
-                    processArrayList.add(process);
+                    processes.add(process);
                 } else {
-                    operation.rank = processArrayList.get(operation.proc).Size();
-                    processArrayList.get(operation.proc).append(operation);
+                    operation.rank = processes.get(operation.proc).Size();
+                    processes.get(operation.proc).append(operation);
                 }
-                if(operation.isBarrier()){
-                    if(!groups.containsKey(operation.group)) groups.put(operation.group,new LinkedList<Operation>());
+                if (operation.isBarrier()) {
+                    if (!groups.containsKey(operation.group)) groups.put(operation.group, new LinkedList<Operation>());
                     groups.get(operation.group).add(operation);
                 }
             }//if(op!=null)
@@ -82,24 +94,21 @@ public class Program {
         cmpOPsInfo();
     }
 
-    void appendOpToQS(Operation operation){
-        if(operation.isSend()){
-            if(!sendqs.containsKey(operation.getHashCode())) sendqs.put(operation.getHashCode(), new LinkedList<Operation>());
+    void appendOpToQS(Operation operation) {
+        if (operation.isSend()) {
+            if (!sendqs.containsKey(operation.getHashCode()))
+                sendqs.put(operation.getHashCode(), new LinkedList<Operation>());
             sendqs.get(operation.getHashCode()).add(operation);
-        }else if(operation.isRecv()){
-            if(!recvqs.containsKey(operation.getHashCode())) recvqs.put(operation.getHashCode(), new LinkedList<Operation>());
+        } else if (operation.isRecv() || operation.isIRecv()) {
+            if (!recvqs.containsKey(operation.getHashCode()))
+                recvqs.put(operation.getHashCode(), new LinkedList<Operation>());
             recvqs.get(operation.getHashCode()).add(operation);
         }
     }
-    /*
-     *   after initialize the program, we have added all the actions to the program,
-     *   but not finish the work of completing the info of the actions
-     *   such as each action's rank ***********
-     *   the wait action's req and the blocking recv action's nearliest wait is which one
-     */
-    private void cmpOPsInfo() {
+
+    void cmpOPsInfo() {
         int indx = 0;
-        for (Process process : processArrayList) {
+        for (Process process : processes) {
             for (Operation operation : process.ops) {
                 operation.indx = indx;
                 indx++;
@@ -109,106 +118,109 @@ public class Program {
                     process.ops.get(operation.reqID).Nearstwait = operation;
                 }
                 if (operation.isRecv()) {
-                    operation.index = process.rlist.indexOf(operation);
+                    operation.index = recvqs.get(operation.getHashCode()).indexOf(operation);
                 }
                 if (operation.isSend()) {
-                    operation.index = process.slist.indexOf(operation);
+                    operation.index = sendqs.get(operation.getHashCode()).indexOf(operation);
                 }
             }
             indx += 2;
         }
     }
 
-    public Process get(int i){
-        return processArrayList.get(i);
-    }
-
-    public int getSize() {
-        return processArrayList.size();
-    }
-
-    public ArrayList<Process> getAllProcesses() {
-        return processArrayList;
-    }
-
-    public void setMatchTables() {
+    /**
+     * generate the Match Pairs,
+     * MatchTables: <Recv, <Send,...>> ,....
+     * MatchTablesForS: <Send, <Recv,...>> ,....
+     */
+    void setMatchTables() {
         MatchPairs matchPairs = new MatchPairs(this);
         this.matchTables = matchPairs.matchTables;
-        if(!matchTables.isEmpty()) setMatchTablesForS();
+        if (!matchTables.isEmpty()) setMatchTablesForS();
     }
 
-    public void setMatchTablesForS() {
+    void setMatchOrderTables(){
+        MatchOrder matchOrder = new MatchOrder(this);
+        this.matchOrderTables = matchOrder.MatchOrderTables;
+    }
+
+    void setMatchTablesForS() {
         matchTablesForS = new Hashtable<Operation, LinkedList<Operation>>();
-        for(Operation recv : matchTables.keySet()){
-            for(Operation send : matchTables.get(recv)){
-                if(!matchTablesForS.containsKey(send)) matchTablesForS.put(send, new LinkedList<Operation>());
+        for (Operation recv : matchTables.keySet()) {
+            for (Operation send : matchTables.get(recv)) {
+                if (!matchTablesForS.containsKey(send)) matchTablesForS.put(send, new LinkedList<Operation>());
                 matchTablesForS.get(send).add(recv);
             }
         }
+    }
+
+    /**
+     * public functions:
+     */
+    public Process get(int i) {
+        return processes.get(i);
+    }
+
+    public int getSize() {
+        return processes.size();
+    }
+
+    public ArrayList<Process> getAllProcesses() {
+        return processes;
     }
 
     public void printMatchPairs() {
         System.out.println("[MATCH-PAIRS]: MATCH PAIRS IS SHOWN AS FOLLOWING :");
         for (Operation R : matchTables.keySet()) {
             for (Operation S : matchTables.get(R)) {
-                System.out.println("<R"+ R.proc+"_"+ R.index + ", S" + S.proc + "_" + S.index + ">");
+                System.out.println("<" + R.getStrInfo() + ", " + S.getStrInfo() + ">");
             }
         }
     }
 
-    public void printOps(){
+    public void printOps() {
         System.out.println("[PROGRAM]: ALL THE OPERATIONS ARE : ");
-        for(Process process : processArrayList){
-            System.out.println("Process "+process.rank);
-            for(Operation operation : process.ops){
-                System.out.println("   "+operation.getStrInfo());
+        for (Process process : processes) {
+            System.out.println("Process " + process.rank);
+            for (Operation operation : process.ops) {
+                System.out.println("   " + operation.getStrInfo());
             }
         }
 
     }
-    public void printALLOperations(){
+
+    public void printALLOperations() {
         System.out.println("[PROGRAM]: the program:");
 
-
-        for(Process process : processArrayList){
+        for (Process process : processes) {
             System.out.println("TYPE P D I");
-            for(Operation operation : process.ops){
-                if(operation.isSend()){
-                    System.out.println(operation.type+" "+operation.proc+" "+operation.dst+" "
-                            +operation.rank);
-                }else if(operation.isRecv()) {
-                    System.out.println(operation.type+" "+operation.proc+" "+operation.src+" "
-                            +operation.rank);
-                }else if(operation.isWait()){
-                    System.out.println(operation.type+" "+operation.proc+" "+operation.req.rank+" "+operation.rank);
-                }else if(operation.isBarrier()){
-                    System.out.println(operation.type+" "+operation.proc+" "+operation.rank+" "+operation.group);
+            for (Operation operation : process.ops) {
+                if (operation.isSend()) {
+                    System.out.println(operation.type + " " + operation.proc + " " + operation.dst + " "
+                            + operation.rank);
+                } else if (operation.isRecv()) {
+                    System.out.println(operation.type + " " + operation.proc + " " + operation.src + " "
+                            + operation.rank);
+                } else if (operation.isWait()) {
+                    System.out.println(operation.type + " " + operation.proc + " " + operation.req.rank + " " + operation.rank);
+                } else if (operation.isBarrier()) {
+                    System.out.println(operation.type + " " + operation.proc + " " + operation.rank + " " + operation.group);
                 }
             }
             System.out.println(" ");
         }
     }
 
-    public boolean isCheckInfiniteBuffer(){
+    public boolean isCheckInfiniteBuffer() {
         return checkInfiniteBuffer;
     }
 
     public static void main(String[] args) {
-        Program program = new Program("./src/test/fixtures/2.txt");
-//        for(Process process : program.processArrayList){
-//            for(Operation op : process.ops){
-//                System.out.println(op.getStrInfo()+" :  "+op.dst+" "+op.src);
-//                System.out.println("operation 's hashcode: "+op.getHashCode());
-//                Pair<Integer,Integer> pair = new Pair<>(op.dst, op.src);
-//                System.out.println("pair hashcode : "+pair.hashCode());
-//            }
-//        }
+        Program program = new Program("./src/test/fixtures/monte4.txt");
 
 //        program.printALLOperations();
-//        program.printMatchPairs();
+        program.printMatchPairs();
     }
-
-
 
 
 }

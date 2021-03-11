@@ -62,7 +62,7 @@ public class MatchOrder {
     boolean isMatchOrder(Operation op1, Operation op2){
         if(isProcessOrder(op1,op2)){
             if(isQueueOrder(op1, op2)) return true;//match order rule1
-            if((op1.isWait() && op1.req.isRecv()) || (op1.isWait() && op1.isSend() && (!checkInfiniteBuffer))) return true;//rule2
+            if((op1.isWait() && op1.req.isRecv()) || (op1.isWait() && op1.req.isSend() && (!checkInfiniteBuffer))) return true;//rule2
             if(op1.isBarrier()) return true;//rule2
             //rule3:
             if(op1.isRecv() && op2.isWait() && op2.req == op1) return true;//infinite buffer: only recv

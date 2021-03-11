@@ -57,9 +57,6 @@ public class MatchPairs {
                     Iterator<Operation> iterator_s = sendList[process.rank][j].iterator();
                     while (iterator_s.hasNext()) {
                         Operation send = iterator_s.next();
-//                        System.out.println("S"+send.proc+"_"+send.index);
-//                        System.out.println("R"+recv.proc+"_"+recv.index);
-//                        System.out.println(send.index+" "+rCount[send.dst]+ " "+rCount[program.getSize()]+" "+sTotalCountForR+" "+sendList[send.dst][send.src].size());
                         if ((recv.src == send.src || recv.src == -1)//rule
                                 && send.index <= rCount[send.dst] + rCount[program.getSize()] + 1 //rule 1
                                 && send.index >= rCount[send.dst] + rCount[program.getSize()] - Integer.max(0, (sTotalCountForR - sendList[send.dst][send.src].size())) //rule2

@@ -107,8 +107,8 @@ public class SMTSolver {
         Hashtable<Integer, Operation> gourps = new Hashtable<Integer, Operation>();
         LinkedList<Expr> times = new LinkedList<Expr>();
         for(Operation operation : acts){
-            if(program.matchOrder.MatchOrderTables.containsKey(operation)) {//a <mo b
-                for (Operation succOp : program.matchOrder.MatchOrderTables.get(operation)) {
+            if(program.matchOrderTables.containsKey(operation)) {//a <mo b
+                for (Operation succOp : program.matchOrderTables.get(operation)) {
                     if (succOp.rank < candidate.tracker[succOp.proc] && !succOp.isBot()) {
                         solver.add(mkCompleteBefore(operation, succOp));
                     }
