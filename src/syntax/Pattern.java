@@ -10,7 +10,7 @@ import java.util.Stack;
 public class Pattern {
 
     public Hashtable<Integer, Operation> pattern;
-    public Graph graph;
+    private int programsize;
 
     public Set<Integer> deadlockPros;
     public Set<Operation> deadlockReqs;
@@ -19,13 +19,14 @@ public class Pattern {
     public boolean DeadlockCandidate = false;
 
     public Pattern(Graph graph, Stack<Operation> stack){
-        this.graph = graph;
+        this.programsize = graph.program.getSize();
         pattern = new Hashtable<Integer, Operation>();
         deadlockPros = new HashSet<>();
         deadlockReqs = new HashSet<>();
         tracker = new int[graph.program.getSize()];
         for (Operation op : stack) {//barrier/wait/zero send/Irecv/ can be the control point in a pattern
             if (op.isWait() || op.isBarrier() || (op.isSend() && (!graph.program.checkInfiniteBuffer)) || (op.isIRecv())) {
+                if(op.isSend() && (!graph.program.checkInfiniteBuffer)) op = op.Nearstwait;
                 if (!pattern.containsKey(op.proc)) pattern.put(op.proc, op);
                 if (pattern.containsKey(op.proc) && op.rank < pattern.get(op.proc).rank) pattern.put(op.proc, op);
             }
@@ -38,7 +39,7 @@ public class Pattern {
     void setDeadlockProcs() {
         if(pattern.isEmpty()){
             deadlockPros = new HashSet<>();
-            for(int i = 0; i<graph.program.getSize(); i++){
+            for(int i = 0; i<programsize; i++){
                 deadlockPros.add(i);
             }
         }else{
@@ -80,7 +81,7 @@ public class Pattern {
     }
 
     public void printPattern(){
-        System.out.println("[PATTERN]: THIS PATTERN IS LIKE THIS:");
+        System.out.print("[PATTERN]: THIS PATTERN IS LIKE THIS:");
         for(Operation operation : pattern.values()){
             System.out.print(" "+operation.getStrInfo()+" ++ ");
         }

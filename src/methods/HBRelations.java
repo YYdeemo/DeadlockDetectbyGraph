@@ -33,7 +33,7 @@ public class HBRelations {
         Operation lastR = null;
         Hashtable<Integer, Operation> lastS = new Hashtable<>();
 
-        for (Process process : program.processArrayList) {
+        for (Process process : program.processes) {
             for (Operation operation : process.ops) {
                 //if operation is a RECV
                 if (operation.isRecv()) {

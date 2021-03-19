@@ -29,6 +29,11 @@ public class CsecOperation extends Operation {
         return "Csec"+super.getStrInfo();
     }
 
+    @Override
+    public String toString() {
+        return getStrInfo();
+    }
+
     public boolean isCsecSend(){
         return this.type == OPTypeEnum.SEND;
     }

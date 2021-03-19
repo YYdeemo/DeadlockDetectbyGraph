@@ -43,7 +43,7 @@ public class AbstractMachine {
                 indicator[i] = -1;
             } else {
                 indicator[i] = this.pattern.get(i).rank;//equal the match
-//                indicator[i] = program.processArrayList.get(i).ToPoint(pattern.get(i));
+//                indicator[i] = program.processes.get(i).ToPoint(pattern.get(i));
             }
             tracker[i] = 0;
         }
@@ -66,7 +66,7 @@ public class AbstractMachine {
 //                    System.out.println("[ABSTRACT MACHINE]: NOW CHECKING "+operation.getStrInfo()+" OPERATION.");
 //
                     if(tracker[process.rank] == indicator[process.rank]){
-                        assert operation.isWait() || operation.isBarrier();
+//                        assert operation.isWait() || operation.isBarrier();
 //                        System.out.println("[ABSTRACT MACHINE]: * NOW PROCESS "+process.rank+ " STOP AT "+operation.getStrInfo());
                         break;//stop at this operation which is recorded by the indicator in this process
                     }
@@ -91,19 +91,22 @@ public class AbstractMachine {
 //                                    System.out.println("[ABSTRACT MACHINE]: MATCHING ACTION "+req.getStrInfo()+" HAS NOT ISSUED!");
                                     break;
                                 }
-                                consume(req,idx+1);//only the req is recv, we consume the match pair
+                                consume(req.getHashCode(),idx+1,req);//only the req is recv, we consume the match pair
                             }
 
                         }else if (req.isSend()) {
-                            if(sendInShape.get(req.getHashCode()).contains(req)){
-                                if(sendInShape.get(req.getHashCode()).indexOf(req)<sendInShape.get(req.getHashCode()).size()-1)
-                                    break;//non over-tacking rule
-                            }
-                            if(!program.checkInfiniteBuffer){//zero buffer
-                                Pair<Integer, Integer> pair = new Pair<>(req.dst, -1);
-                                if(sendInShape.get(req.getHashCode()).contains(req)
-                                        || sendInShape.get(pair).contains(req)){
+                            Pair<Integer, Integer> pair = new Pair<>(req.dst, -1);
+                            if (sendInShape.get(req.getHashCode()).contains(req) && sendInShape.get(pair).contains(req)){
+                                int idx = sendInShape.get(req.getHashCode()).indexOf(req);
+                                int idxw = sendInShape.get(pair).indexOf(req);
+                                if(recvInShape.get(req.getHashCode()).size()<=idx && recvInShape.get(pair).size()<=idxw)
+                                {
+//                                    System.out.println("no recv for match  s ="+req.getStrInfo());
                                     break;
+                                }else if (recvInShape.get(req.getHashCode()).size()>idx){
+                                    consume(req.getHashCode(),idx+1, req);
+                                }else{
+                                    consume(pair,idxw+1,req);
                                 }
                             }
                         }
@@ -129,12 +132,14 @@ public class AbstractMachine {
                 }
                 boolean hasChange = false;
                 for (int i = 0; i < program.getSize(); i++) {
-                    if (old_tracker[process.rank] != tracker[process.rank]) {
+                    if (old_tracker[i] != tracker[i]) {
                         hasChange = true;
                         break;
                     }
                 }
-                if (!hasChange) return reachedControlPoint();
+                if (!hasChange){
+                    return reachedControlPoint();
+                }
 //                find the deadlock or reach all the control points;
             }
         }
@@ -154,31 +159,21 @@ public class AbstractMachine {
             recvInShape.get(operation.getHashCode()).add(operation);
     }
 
-    void consume(Operation req, int idx){
+    void consume(Pair<Integer, Integer> pair, int idx, Operation req){
         if(req.isRecv()){
             for (int i = 0; i<idx; i++){
-                Operation recv = recvInShape.get(req.getHashCode()).pop();
-                Operation send = sendInShape.get(req.getHashCode()).pop();
-                Pair<Integer, Integer> pair;
-//                System.out.println("[CONSUME]:  "+send.getStrInfo()+" <--> "+recv.getStrInfo());
-                if(req.src == -1){
-                    pair = new Pair<>(send.dst, send.src);
-                    sendInShape.get(pair).remove(send);
-                }else {
-                    pair = new Pair<>(send.dst, -1);
-                    sendInShape.get(pair).remove(send);
-                }
+                Operation recv = recvInShape.get(pair).pop();
+                Operation send = sendInShape.get(pair).pop();
+                System.out.println("[CONSUME]:  "+send.getStrInfo()+" <--> "+recv.getStrInfo());
+            }
+        }else if(req.isSend()){
+            for (int i = 0; i<idx; i++){
+                Operation recv = recvInShape.get(pair).pop();
+                Operation send = sendInShape.get(pair).pop();
+                System.out.println("[CONSUME]:  "+send.getStrInfo()+" <--> "+recv.getStrInfo());
             }
         }
     }
-
-//    void consume(LinkedList<Operation> sendQ, LinkedList<Operation> recvQ, int idx){
-//        for(int i = 0; i<idx; i++){
-//            Operation send = sendQ.pop();
-//            Operation recv = recvQ.pop();
-//            System.out.println("[CONSUME]:  "+send.getStrInfo()+" <--> "+recv.getStrInfo());
-//        }
-//    }
 
     Status reachedControlPoint(){
         for(int i = 0; i< program.getSize(); i++){

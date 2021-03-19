@@ -11,7 +11,7 @@ public class Graph {
      */
     public Program program;
     public Vector<Operation> VList;
-    public Hashtable<Operation, Set<Operation>> ETable;
+    public Hashtable<Operation, LinkedList<Operation>> ETable;
 
     Operation[] bot;
     Operation[] barr;
@@ -19,12 +19,12 @@ public class Graph {
     public Graph(Program program) {
         this.program = program;
         VList = new Vector<Operation>();
-        ETable = new Hashtable<Operation, Set<Operation>>();
+        ETable = new Hashtable<Operation, LinkedList<Operation>>();
         bot = new Operation[program.getSize()];
         barr = new Operation[program.getSize()];
         initGraph();
         System.out.println("[GRAPH]: FINISH INIT GRAPH FROM A PROGRAM");
-        Collections.sort(VList);
+//        Collections.sort(VList);
 
     }
 
@@ -36,8 +36,8 @@ public class Graph {
         //generate all edges for the graph
         for(Operation operation : program.matchOrderTables.keySet()){
             for(Operation lop : program.matchOrderTables.get(operation)){
-                if(!ETable.containsKey(operation)) ETable.put(operation, new HashSet<Operation>());
-                ETable.get(operation).add(lop);
+                if(!ETable.containsKey(operation)) ETable.put(operation, new LinkedList<Operation>());
+                if(!ETable.get(operation).contains(lop)) ETable.get(operation).add(lop);
             }
         }
 
@@ -50,17 +50,18 @@ public class Graph {
             for (Operation op : process.ops)//rule 1: for each op : op-->bot
             {
                 if (!ETable.containsKey(op))
-                    ETable.put(op, new HashSet<Operation>());
-                ETable.get(op).add(bot[process.rank]);
+                    ETable.put(op, new LinkedList<>());
+                if(!ETable.get(op).contains(bot[process.rank])) ETable.get(op).add(bot[process.rank]);
             }
 //            the last MPI operation should add the Edge to the nocomm action
             if (process.ops.size() > 0) {
                 if (!ETable.containsKey(process.ops.getLast()))
-                    ETable.put(process.ops.getLast(), new HashSet<Operation>());
-                ETable.get(process.ops.getLast()).add(barr[process.rank]);
+                    ETable.put(process.ops.getLast(), new LinkedList<>());
+                if(!ETable.get(process.ops.getLast()).contains(barr[process.rank]))
+                    ETable.get(process.ops.getLast()).add(barr[process.rank]);
             }
 //            the nocomm -> the bot
-            ETable.put(barr[process.rank], new HashSet<Operation>());
+            ETable.put(barr[process.rank], new LinkedList<>());
             ETable.get(barr[process.rank]).add(bot[process.rank]);
 
             for (int i = 0; i < process.ops.size(); i++) {//rule 2: bot --> deterministic recv (follow wildcard recv)
@@ -72,8 +73,9 @@ public class Graph {
                         {
                             int src = op2.src; //the source for the deterministic receive a
                             if (!ETable.containsKey(bot[src]))
-                                ETable.put(bot[src], new HashSet<Operation>());
-                            ETable.get(bot[src]).add(op2);
+                                ETable.put(bot[src], new LinkedList<Operation>());
+                            if(!ETable.get(bot[src]).contains(op2))
+                                ETable.get(bot[src]).add(op2);
                         }
                     }
                 }
@@ -85,8 +87,9 @@ public class Graph {
                     for (Operation op2 : program.processes.get(dest).ops) {
                         if (op2.isRecv() && op2.src == -1) {
                             if (!ETable.containsKey(bot[dest]))
-                                ETable.put(bot[dest], new HashSet<Operation>());
-                            ETable.get(bot[dest]).add(op1);
+                                ETable.put(bot[dest], new LinkedList<Operation>());
+                            if (!ETable.get(bot[dest]).contains(op1))
+                                ETable.get(bot[dest]).add(op1);
                         }
                     }
                 }
@@ -105,8 +108,9 @@ public class Graph {
             for(Operation srcBarrier : program.groups.get(groupID)){
                 for(Operation snkBarrier : barrs){
                     if(!snkBarrier.equals(srcBarrier)){
-                        if(!ETable.containsKey(srcBarrier)) ETable.put(srcBarrier,new HashSet<>());
-                        ETable.get(srcBarrier).add(snkBarrier);
+                        if(!ETable.containsKey(srcBarrier)) ETable.put(srcBarrier,new LinkedList<>());
+                        if (!ETable.get(srcBarrier).contains(snkBarrier))
+                            ETable.get(srcBarrier).add(snkBarrier);
                     }
                 }
             }
@@ -120,8 +124,8 @@ public class Graph {
         for (Operation srcBarrier : barr) {
             for (Operation snkBarrier : barrs) {
                 if (!snkBarrier.equals(srcBarrier)) {
-                    if (!ETable.containsKey(srcBarrier)) ETable.put(srcBarrier, new HashSet<>());
-                    ETable.get(srcBarrier).add(snkBarrier);
+                    if (!ETable.containsKey(srcBarrier)) ETable.put(srcBarrier, new LinkedList<>());
+                    if (!ETable.get(srcBarrier).contains(snkBarrier)) ETable.get(srcBarrier).add(snkBarrier);
                 }
             }
         }
@@ -145,7 +149,7 @@ public class Graph {
         Hashtable<Operation, LinkedList<Operation>> match_table = program.matchTables;
         continuepoint:
         for (Operation op : VList) {
-            if (!(op.isRecv())) {
+            if (!(op.isRecv()|| op.isIRecv())) {
                 continue continuepoint;
             }
 
@@ -154,17 +158,14 @@ public class Graph {
             }
 
             if (!ETable.containsKey(op))
-                ETable.put(op, new HashSet<Operation>());
+                ETable.put(op, new LinkedList<Operation>());
 
             continuepoint1:
             for (Operation s : match_table.get(op)) {
-                if (!VList.contains(s)) {
-                    continue continuepoint1;
-                }
-                ETable.get(op).add(s);
-                if (!ETable.containsKey(s)) //add reversed match relation
-                    ETable.put(s, new HashSet<Operation>());
-                ETable.get(s).add(op);
+                if (!VList.contains(s)) continue continuepoint1;
+                if (!ETable.get(op).contains(s)) ETable.get(op).add(s);
+                if (!ETable.containsKey(s)) ETable.put(s, new LinkedList<>());
+                if (!ETable.get(s).contains(op)) ETable.get(s).add(op);
             }
         }
     }
@@ -189,7 +190,7 @@ public class Graph {
         return VList.size();
     }
 
-    public Set<Operation> adj(Operation v)
+    public LinkedList<Operation> adj(Operation v)
     {
         if(!ETable.containsKey(v))
             return null;
@@ -214,7 +215,9 @@ public class Graph {
     }
     public void printGraphETable(){
         System.out.println("[GRAPH]: THE GRAPH IS LIKE THIS:");
-        for(Operation v : ETable.keySet()){
+        List<Operation> keylist = new ArrayList<>(ETable.keySet());
+        Collections.sort(keylist);
+        for(Operation v : keylist){
             System.out.println(v.getStrInfo()+"-->");
             for(Operation w : ETable.get(v)){
                 System.out.print(" "+w.getStrInfo()+"  ");
@@ -224,9 +227,9 @@ public class Graph {
     }
 
     public static void main(String[] args) {
-        Program program = new Program("./src/test/fixtures/3.txt");
+        Program program = new Program("./src/test/fixtures/diffusion2d4.txt",false);
         NewProgram newProgram = new NewProgram(program);
-        Graph graph = new Graph(program);
+        Graph graph = new Graph(newProgram);
         graph.printGraphVList();
         graph.printGraphETable();
     }

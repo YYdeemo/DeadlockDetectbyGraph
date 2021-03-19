@@ -8,8 +8,9 @@ public class NewProgram extends Program{
     public Program program;
 
     public NewProgram(Program program) {
+        super();//straight extends program or has a feature program ?
         this.program = program;
-
+        this.checkInfiniteBuffer = program.checkInfiniteBuffer;
         csecOpsTables = new Hashtable<>();
 
         refactorProgram();
@@ -96,13 +97,34 @@ public class NewProgram extends Program{
 
     void refactorMatchOrder() {
         for (Operation op1 : program.matchOrderTables.keySet()) {
-            Operation nop1;
-            if (csecOpsTables.keySet().contains(op1)) nop1 = csecOpsTables.get(op1);
-            else nop1 = op1;
-            this.matchOrderTables.put(nop1, new HashSet<>());
-            for (Operation op2 : program.matchOrderTables.get(op1)) {
-                if (csecOpsTables.keySet().contains(op2)) op2 = csecOpsTables.get(op2);
-                this.matchOrderTables.get(nop1).add(op2);
+            if (!op1.isWait()){
+                Operation nop1;
+                if (csecOpsTables.keySet().contains(op1)) nop1 = csecOpsTables.get(op1);
+                else nop1 = op1;
+                this.matchOrderTables.put(nop1, new HashSet<>());
+                for (Operation op2 : program.matchOrderTables.get(op1)) {
+                    if (!op2.isWait()){
+                        if (csecOpsTables.keySet().contains(op2)) op2 = csecOpsTables.get(op2);
+                        if (nop1!=op2) this.matchOrderTables.get(nop1).add(op2);
+                    }else{
+                        if (csecOpsTables.keySet().contains(op2.req)) op2 = csecOpsTables.get(op2.req).Nearstwait;
+                        if (nop1!=op2) this.matchOrderTables.get(nop1).add(op2);
+                    }
+                }
+            }else {
+                Operation wait1;
+                if(csecOpsTables.keySet().contains(op1.req)) wait1 = csecOpsTables.get(op1.req).Nearstwait;
+                else wait1 = op1;
+                this.matchOrderTables.put(wait1, new HashSet<>());
+                for(Operation op2 : program.matchOrderTables.get(op1)){
+                    if(!op2.isWait()){
+                        if(csecOpsTables.keySet().contains(op2)) op2 = csecOpsTables.get(op2);
+                        if (wait1!=op2) this.matchOrderTables.get(wait1).add(op2);
+                    }else{
+                        if(csecOpsTables.keySet().contains(op2.req)) op2 = csecOpsTables.get(op2.req).Nearstwait;
+                        if (wait1!=op2) this.matchOrderTables.get(wait1).add(op2);
+                    }
+                }
             }
         }
     }

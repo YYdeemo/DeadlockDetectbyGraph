@@ -89,5 +89,8 @@ public class Operation implements Comparable{
         return this.indx-compareRank;
     }
 
-
+    @Override
+    public String toString() {
+        return this.type+" "+this.proc+"_"+this.rank;
+    }
 }

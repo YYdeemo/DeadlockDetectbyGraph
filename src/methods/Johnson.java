@@ -1,10 +1,7 @@
 package methods;
 
 import constant.OPTypeEnum;
-import syntax.Graph;
-import syntax.Operation;
-import syntax.Pattern;
-import syntax.Program;
+import syntax.*;
 
 import java.util.*;
 
@@ -14,19 +11,17 @@ public class Johnson {
      * which achieve finding the cycles in the graph by Johnson
      */
     public Graph graph;
-    public int leastVertex;
+    private int leastVertex;
     public LinkedList<Pattern> patterns;//which save the fake deadlock candidates
 
-    public Stack<Operation> stack;//
+    private Stack<Operation> stack;//
     Hashtable<Operation, Boolean> blocked;
     Hashtable<Operation, List<Operation>> blockedNodes;
     Hashtable<Integer, Operation> orphaned_paths;
     Stack<Operation> orphaned;
     Hashtable<Integer, Integer> block_count;
 
-    Set<Operation> leastSCC;
-
-    int count_cut = 0;//??????
+    int count_cut = 0;
 
     public Johnson(Graph graph) {
         this.graph = graph;
@@ -38,18 +33,23 @@ public class Johnson {
         orphaned = new Stack<Operation>();
         orphaned_paths = new Hashtable<Integer, Operation>();
         block_count = new Hashtable<Integer, Integer>();
-        leastSCC = new HashSet<Operation>();
-        System.out.println("[JOHNSON]: START FINDING THE CYCLES .");
+//        leastSCC = new HashSet<Operation>();
         find();
     }
 
     public void find() {
         stack.empty();
         int i = 0;
-        while (i < graph.VList.size() - 1) {
-            leastSCC = getLeastSCC(i);
+        while (i < graph.VList.size()-1) {
+            if(i==16)
+                assert true;
+            Set<Operation> leastSCC = getLeastSCC(i);
+            System.out.println("i = "+leastVertex+ " first op is "+graph.VList.get(leastVertex).getStrInfo());
+
             if (leastSCC != null) {
                 i = leastVertex;
+                blocked.clear();
+                blockedNodes.clear();
                 for (Operation v : leastSCC) {
                     blocked.put(v, false);
                     blockedNodes.put(v, new LinkedList<Operation>());
@@ -59,7 +59,7 @@ public class Johnson {
                 circuit(leastSCC, i, i);
                 i++;
             } else {
-                i = graph.VList.size() - 1;
+                i = graph.VList.size()-1;
             }
         }
     }
@@ -67,7 +67,7 @@ public class Johnson {
     //if the find function has a Integer parameter, then the function is used to ...
     public void find(int i) {
         stack.empty();
-        leastSCC = getLeastSCC(i);
+        Set<Operation> leastSCC = getLeastSCC(i);
         if (leastSCC != null) {
             i = leastVertex;
             for (Operation v : leastSCC) {
@@ -99,7 +99,9 @@ public class Johnson {
         }
         stack.push(vertex);
         //block_count count the number of operations besides the sends which in infinite buffer (<pro.rank, num>)
-        if (!(graph.program.isCheckInfiniteBuffer() && vertex.isSend())) {//TRUE:not infinite & send / not send /not infinite and not send
+        if ((vertex.isWait()&&vertex.req.isRecv())
+                || (vertex.isWait()&&vertex.req.isSend()&&(!graph.program.isCheckInfiniteBuffer()))
+                || vertex.isBarrier()){//TRUE:wait for recv || wait for zero buffer send || barrier
             if (!block_count.containsKey(vertex.proc))
                 block_count.put(vertex.proc, 1);
             else block_count.put(vertex.proc, block_count.get(vertex.proc) + 1);
@@ -113,22 +115,26 @@ public class Johnson {
         continuepoint:
         for (Operation w : graph.ETable.get(vertex)) {
 
-            if (!(good_edge(vertex, w, startvertex)))//check whether the path is good_edge
+            if (!(good_edge(vertex, w, startvertex))) {//check whether the path is good_edge
+                System.out.println("no good edge : v="+vertex.getStrInfo()+" w="+w.getStrInfo());
                 continue continuepoint;
+            }
 
             if (vertex.proc != w.proc)//???the orphaned_paths save <v.proc,w>
                 orphaned_paths.put(vertex.proc, w);
 
             adj_leastSCC.add(w);
-
+            Stack<Operation> stackclone = (Stack<Operation>) stack.clone();
+            System.out.println(stackclone+" "+w.getStrInfo());
             if (w == startvertex) {// find the circle
                 if (stack.size() > 2) {
 
                     count_cut = count_cut + stack.size();
-//                    printCycles(stack);
-                    Pattern pattern = new Pattern(graph, stack);//get the pattern from the circle
+                    Pattern pattern = new Pattern(graph, stackclone);//get the pattern from the circle
 
-                    if (pattern.getSize() > 1 && !patterns.contains(pattern)) {
+                    if (pattern.pattern.size() > 1 && isNewPattern(pattern)) {
+                        printCycles(stackclone);
+                        pattern.printPattern();
                         patterns.add(pattern);
                         f = true;
                     }
@@ -138,9 +144,10 @@ public class Johnson {
                 }
 
             } else {
-
                 if (blocked.containsKey(w) && !blocked.get(w)) {
                     f = circuit(dg, graph.VList.indexOf(w), s);
+                }else{
+//                    System.out.println("blocked :"+w.getStrInfo()+ " v="+vertex.getStrInfo());
                 }
             }
         }
@@ -161,7 +168,9 @@ public class Johnson {
         }
         stack.pop();
 
-        if (!(graph.program.isCheckInfiniteBuffer() && vertex.isSend())) {
+        if ((vertex.isWait()&&vertex.req.isRecv())
+                || (vertex.isWait()&&vertex.req.isSend()&&(!graph.program.isCheckInfiniteBuffer()))
+                || vertex.isBarrier()){//TRUE:wait for recv || wait for zero buffer send || barrier
             block_count.put(vertex.proc, block_count.get(vertex.proc) - 1);
         }
 
@@ -173,34 +182,47 @@ public class Johnson {
         if (v.proc == w.proc)
             return true;
 
-        //if infinite buffer, the first action in any process should not be a send
-        if (graph.program.isCheckInfiniteBuffer() && w.isSend())
+        if (v.isWait() && v.proc!=w.proc)
             return false;
+
+        //if infinite buffer, the first action in any process should not be a send
+        if (graph.program.isCheckInfiniteBuffer() && w.isSend()) {
+            System.out.println("infinite buffer");
+            return false;
+        }
 
         //if(w.process.getRank() != s.process.getRank() && proc_stack.contains(w.process.getRank()))
         //return false;
 
-        if (!block_count.containsKey(v.proc))
+        if (!block_count.containsKey(v.proc)) {
+            System.out.println("blocked count");
             return false;
+        }
 
         if (stack.size() == 1) //has to travel down the process of startvertex first instead of jumping to another process
         {
             return false;
         } else if (stack.size() > 1) {
-            if (stack.peek().proc != stack.get(stack.size() - 2).proc)
+            if (stack.peek().proc != stack.get(stack.size() - 2).proc) {
+                System.out.println("stack peek proc rank same");
                 return false;
+            }
         }
 
         if (w.isRecv() && w.src == -1)
             return false;
 
         for (Operation a : orphaned) {
-            if (can_match(a, w))
+            if (can_match(a, w)) {
+                System.out.println("can match");
                 return false;
+            }
         }
 
-        if (orphaned_paths.containsKey(v.proc) && orphaned_paths.get(v.proc).equals(w))
+        if (orphaned_paths.containsKey(v.proc) && orphaned_paths.get(v.proc).equals(w)) {
+            System.out.println("orphaned_paths");
             return false;
+        }
 
         if (!w.equals(s)) {
             for (Operation a : stack) {
@@ -248,11 +270,26 @@ public class Johnson {
         return patterns;
     }
 
+    boolean isNewPattern(Pattern pattern){
+        for(Pattern pattern1 : patterns){
+            if(pattern.pattern.equals(pattern1.pattern)){
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static void main(String[] args) {
-        Program program = new Program("./src/test/fixtures/2.txt");
-        Graph graph = new Graph(program);
-        graph.printGraphVList();
+        Program program = new Program("./src/test/fixtures/diffusion2d4.txt",false);
+        NewProgram newProgram = new NewProgram(program);
+//        program.checkInfiniteBuffer = false;
+//        newProgram.checkInfiniteBuffer = false;
+        Graph graph = new Graph(newProgram);
+        graph.printGraphETable();
+//        graph.printGraphVList();
         Johnson johnson = new Johnson(graph);
+        System.out.println("the pattens size is : "+johnson.patterns.size());
+        System.out.println(program.checkInfiniteBuffer);
         for(Pattern pattern : johnson.getPatterns()){
             pattern.printPattern();
         }
@@ -291,8 +328,8 @@ class TarjanSCC {
         leastSubVectors = null;
         leastvertex = lowerbound;
         low = new int[Vsize];
-        pre = 0;
-        count = 0;
+//        pre = 0;
+//        count = 0;
 
 
         int minrank = Integer.MAX_VALUE;

@@ -36,13 +36,17 @@ public class Program {
 
     public Program(String filepath) {
         //初始化variables！！！
-        processes = new ArrayList<>();
-        sendqs = new Hashtable<>();
-        recvqs = new Hashtable<>();
-        groups = new Hashtable<>();
-        matchTables = new Hashtable<>();
-        matchTablesForS = new Hashtable<>();
-        matchOrderTables = new Hashtable<>();
+        initialize();
+        initializeProgramFromCTP(filepath);
+        setMatchTables();
+        setMatchOrderTables();
+        System.out.println("[PROGRAM]:FINISH INIT THE MPI PROGRAM.");
+
+    }
+    public Program(String filepath, boolean checkInfiniteBuffer) {
+        //初始化variables！！！
+        initialize();
+        this.checkInfiniteBuffer = checkInfiniteBuffer;
         initializeProgramFromCTP(filepath);
         setMatchTables();
         setMatchOrderTables();
@@ -51,6 +55,10 @@ public class Program {
     }
 
     public Program(){
+        initialize();
+    }
+
+    void initialize(){
         processes = new ArrayList<>();
         sendqs = new Hashtable<>();
         recvqs = new Hashtable<>();
