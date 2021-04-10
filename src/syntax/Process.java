@@ -25,6 +25,22 @@ public class Process {
             appendToSList(operation);
     }
 
+    public void append(Operation operation, int index){
+        ops.add(index, operation);
+        if (operation.isRecv())
+            appendToRList(operation);
+        if (operation.isSend())
+            appendToSList(operation);
+    }
+
+    public void remove(Operation operation) {
+        ops.remove(operation);
+//        if (operation.isRecv())
+//            rlist.remove(operation);
+//        if (operation.isSend())
+//            slist.remove(operation);
+    }
+
     public void appendToRList(Operation operation) {
         rlist.add(operation);
     }

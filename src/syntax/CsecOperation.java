@@ -5,7 +5,7 @@ import constant.OPTypeEnum;
 import java.util.LinkedList;
 
 public class CsecOperation extends Operation {
-    public LinkedList<Operation> csecOperationList;
+    public LinkedList<Operation> OperationList;
 
     public CsecOperation(OPTypeEnum type, int index, int proc, int src, int dst, int tag, int group, int reqID) {
         super(type, index, proc, src, dst, tag, group, reqID);
@@ -13,16 +13,13 @@ public class CsecOperation extends Operation {
     }
 
     public void appendOpToList(Operation operation){
-        csecOperationList.add(operation);
+        OperationList.add(operation);
     }
 
     public int getSize(){
-        return csecOperationList.size();
+        return OperationList.size();
     }
 
-    public boolean isCsecRecv(){
-        return this.type==OPTypeEnum.RECV;
-    }
 
     @Override
     public String getStrInfo() {
@@ -34,8 +31,5 @@ public class CsecOperation extends Operation {
         return getStrInfo();
     }
 
-    public boolean isCsecSend(){
-        return this.type == OPTypeEnum.SEND;
-    }
 
 }
