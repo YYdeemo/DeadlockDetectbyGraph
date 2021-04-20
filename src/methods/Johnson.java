@@ -1,8 +1,10 @@
 package methods;
 
 import constant.OPTypeEnum;
+import constant.Status;
 import syntax.*;
 
+import java.io.File;
 import java.util.*;
 
 public class Johnson {
@@ -11,6 +13,7 @@ public class Johnson {
      * which achieve finding the cycles in the graph by Johnson
      */
     public Graph graph;
+    public boolean checkInfiniteBuffer;
     private int leastVertex;
     public LinkedList<Pattern> patterns;//which save the fake deadlock candidates
 
@@ -21,10 +24,18 @@ public class Johnson {
     Stack<Operation> orphaned;
     Hashtable<Integer, Integer> block_count;
 
+    Hashtable<Operation,Operation> inCsecOp;
+    Hashtable<Operation,Operation> outCsecOp;
+
     int count_cut = 0;
+    int filterNum = 0;
+    int filterSMTNum = 0;
+
+    boolean foundDeadlock = false;
 
     public Johnson(Graph graph) {
         this.graph = graph;
+        checkInfiniteBuffer = graph.program.checkInfiniteBuffer;
         leastVertex = 0;
         patterns = new LinkedList<Pattern>();
         stack = new Stack<Operation>();
@@ -33,6 +44,8 @@ public class Johnson {
         orphaned = new Stack<Operation>();
         orphaned_paths = new Hashtable<Integer, Operation>();
         block_count = new Hashtable<Integer, Integer>();
+        inCsecOp = new Hashtable<>();
+        outCsecOp = new Hashtable<>();
 //        leastSCC = new HashSet<Operation>();
         find();
     }
@@ -41,15 +54,15 @@ public class Johnson {
         stack.empty();
         int i = 0;
         while (i < graph.VList.size()-1) {
-            if(i==16)
-                assert true;
+            if (foundDeadlock) return;
             Set<Operation> leastSCC = getLeastSCC(i);
-            System.out.println("i = "+leastVertex+ " first op is "+graph.VList.get(leastVertex).getStrInfo());
-
+//            System.out.println("i = "+leastVertex+ " first op is "+graph.VList.get(leastVertex).getStrInfo());
             if (leastSCC != null) {
                 i = leastVertex;
                 blocked.clear();
                 blockedNodes.clear();
+                inCsecOp.clear();
+                outCsecOp.clear();
                 for (Operation v : leastSCC) {
                     blocked.put(v, false);
                     blockedNodes.put(v, new LinkedList<Operation>());
@@ -64,25 +77,6 @@ public class Johnson {
         }
     }
 
-    //if the find function has a Integer parameter, then the function is used to ...
-    public void find(int i) {
-        stack.empty();
-        Set<Operation> leastSCC = getLeastSCC(i);
-        if (leastSCC != null) {
-            i = leastVertex;
-            for (Operation v : leastSCC) {
-                blocked.put(v, false);
-                blockedNodes.put(v, new LinkedList<Operation>());
-            }
-            orphaned_paths.clear();
-            orphaned.clear();
-
-            circuit(leastSCC, i, i);
-        } else {
-            System.out.println("this find getLeastSCC is null, which means the subGrash is empty, where i=" + i);
-        }
-    }
-
     Set<Operation> getLeastSCC(int i) {
         TarjanSCC tarjanSCC = new TarjanSCC(graph, i);
         leastVertex = tarjanSCC.leastvertex;
@@ -91,6 +85,7 @@ public class Johnson {
 
     public boolean circuit(Set<Operation> dg, int v, int s) {
         boolean f = false;
+        if (foundDeadlock) return f;
         Operation vertex = graph.VList.get(v);
         Operation startvertex = graph.VList.get(s);
 
@@ -100,8 +95,10 @@ public class Johnson {
         stack.push(vertex);
         //block_count count the number of operations besides the sends which in infinite buffer (<pro.rank, num>)
         if ((vertex.isWait()&&vertex.req.isRecv())
-                || (vertex.isWait()&&vertex.req.isSend()&&(!graph.program.isCheckInfiniteBuffer()))
-                || vertex.isBarrier()){//TRUE:wait for recv || wait for zero buffer send || barrier
+                || (vertex.isWait()&&vertex.req.isSend()&&(!checkInfiniteBuffer))
+                || vertex.isBarrier()
+                || (vertex.isCsecOperation &&
+                    (vertex.isRecv() || (vertex.isSend() && !checkInfiniteBuffer)))){//TRUE:wait for recv || wait for zero buffer send || barrier
             if (!block_count.containsKey(vertex.proc))
                 block_count.put(vertex.proc, 1);
             else block_count.put(vertex.proc, block_count.get(vertex.proc) + 1);
@@ -114,28 +111,38 @@ public class Johnson {
 
         continuepoint:
         for (Operation w : graph.ETable.get(vertex)) {
+            if (vertex.proc==w.proc){
+                if (vertex.isCsecOperation) outCsecOp.put(vertex,((CsecOperation) vertex).OperationList.getLast());
+                if (w.isCsecOperation) inCsecOp.put(w,((CsecOperation) w).OperationList.getFirst());
+            }
+
+            if(w.proc!=vertex.proc && vertex.isCsecOperation){
+                updateCsecOutPair((CsecOperation) vertex,w);
+            }
+            else if(w.proc!=vertex.proc && w.isCsecOperation){
+                updateCsecInPair((CsecOperation) w,vertex);
+            }
+
 
             if (!(good_edge(vertex, w, startvertex))) {//check whether the path is good_edge
-                System.out.println("no good edge : v="+vertex.getStrInfo()+" w="+w.getStrInfo());
+//                System.out.println("no good edge : v="+vertex.getStrInfo()+" w="+w.getStrInfo());
                 continue continuepoint;
             }
 
             if (vertex.proc != w.proc)//???the orphaned_paths save <v.proc,w>
+            {
                 orphaned_paths.put(vertex.proc, w);
+            }
+
+            Stack<Operation> stackclone = (Stack<Operation>) stack.clone();
+//            System.out.println(stackclone+" "+w.getStrInfo());
 
             adj_leastSCC.add(w);
-            Stack<Operation> stackclone = (Stack<Operation>) stack.clone();
-            System.out.println(stackclone+" "+w.getStrInfo());
             if (w == startvertex) {// find the circle
                 if (stack.size() > 2) {
 
                     count_cut = count_cut + stack.size();
-                    Pattern pattern = new Pattern(graph, stackclone);//get the pattern from the circle
-
-                    if (pattern.pattern.size() > 1 && isNewPattern(pattern)) {
-                        printCycles(stackclone);
-                        pattern.printPattern();
-                        patterns.add(pattern);
+                    if(appendPatternToList(stackclone)) {
                         f = true;
                     }
 
@@ -169,12 +176,37 @@ public class Johnson {
         stack.pop();
 
         if ((vertex.isWait()&&vertex.req.isRecv())
-                || (vertex.isWait()&&vertex.req.isSend()&&(!graph.program.isCheckInfiniteBuffer()))
+                || (vertex.isWait()&&vertex.req.isSend()&&(!checkInfiniteBuffer))
                 || vertex.isBarrier()){//TRUE:wait for recv || wait for zero buffer send || barrier
             block_count.put(vertex.proc, block_count.get(vertex.proc) - 1);
         }
 
         return f;
+    }
+
+    /**
+     * append pattern to the list should do :
+     * check this pattern is new?
+     * @param stack
+     */
+    private boolean appendPatternToList(Stack<Operation> stack) {
+        Stack<Operation> stack1 = updateStack(stack);
+        if (isNewPattern(stack)) {
+            Pattern pattern = new Pattern(graph.program, stack1);
+            patterns.add(pattern);
+
+//            foundDeadlock = true;//Need to be delete!
+
+            if (pattern.status== Status.SATISFIABLE){
+                foundDeadlock = true;
+            }else if (pattern.status == Status.UNREACHABLE){
+                filterNum += 1;
+            }else if (pattern.status == Status.UNSATISFIABLE){
+                filterSMTNum += 1;
+            }
+            return true;
+        }
+        return false;
     }
 
     public boolean good_edge(Operation v, Operation w, Operation s) {
@@ -186,8 +218,8 @@ public class Johnson {
             return false;
 
         //if infinite buffer, the first action in any process should not be a send
-        if (graph.program.isCheckInfiniteBuffer() && w.isSend()) {
-            System.out.println("infinite buffer");
+        if (checkInfiniteBuffer && w.isSend()) {
+//            System.out.println("infinite buffer");
             return false;
         }
 
@@ -195,17 +227,19 @@ public class Johnson {
         //return false;
 
         if (!block_count.containsKey(v.proc)) {
-            System.out.println("blocked count");
+//            System.out.println("blocked count");
             return false;
         }
 
-        if (stack.size() == 1) //has to travel down the process of startvertex first instead of jumping to another process
-        {
-            return false;
-        } else if (stack.size() > 1) {
-            if (stack.peek().proc != stack.get(stack.size() - 2).proc) {
-                System.out.println("stack peek proc rank same");
+        if (!stack.peek().isCsecOperation) {//if this operation is non-csec-action, then they should satisfy those
+            if (stack.size() == 1) //has to travel down the process of startvertex first instead of jumping to another process
+            {
                 return false;
+            } else if (stack.size() > 1) {
+                if (stack.peek().proc != stack.get(stack.size() - 2).proc) {
+//                System.out.println("stack peek proc rank same");
+                    return false;
+                }
             }
         }
 
@@ -214,13 +248,13 @@ public class Johnson {
 
         for (Operation a : orphaned) {
             if (can_match(a, w)) {
-                System.out.println("can match");
+//                System.out.println("can match");
                 return false;
             }
         }
 
         if (orphaned_paths.containsKey(v.proc) && orphaned_paths.get(v.proc).equals(w)) {
-            System.out.println("orphaned_paths");
+//            System.out.println("orphaned_paths");
             return false;
         }
 
@@ -230,6 +264,17 @@ public class Johnson {
                     return false;
             }
             return true;
+        }
+
+        if(v.isCsecOperation){
+            if(stack.size()==1){
+                return true;
+            }else if (stack.size()>1){
+                if(outCsecOp.get(v).rank<=inCsecOp.get(v).rank) return false;
+            }
+        }
+        if (w.isCsecOperation && w.equals(s)){
+            if (outCsecOp.get(w).rank<=inCsecOp.get(w).rank) return false;
         }
 
         return true;
@@ -259,6 +304,56 @@ public class Johnson {
         }
     }
 
+    void updateCsecOutPair(CsecOperation v, Operation w){
+        if(w.isCsecOperation){
+            for(Operation opw : ((CsecOperation)w).OperationList){
+                for(int i = v.OperationList.size()-1;i>=0;i--){
+                    Operation operation = (v).OperationList.get(i);
+                    LinkedList<Operation> matchList;
+                    if(operation.isRecv()){
+                        matchList = graph.program.matchTables.get(operation);
+                    }else matchList = graph.program.matchTablesForS.get(operation);
+                    if (matchList.contains(opw)) {
+                        outCsecOp.put(v, operation);
+                        inCsecOp.put(w,opw);
+                        break;
+                    }
+                }
+            }
+        }else{
+            for(int i = (v).OperationList.size()-1;i>=0;i--){
+                Operation operation = (v).OperationList.get(i);
+                LinkedList<Operation> matchList;
+                if(operation.isRecv()){
+                    matchList = graph.program.matchTables.get(operation);
+                }else matchList = graph.program.matchTablesForS.get(operation);
+                if (matchList.contains(w)) {
+                    outCsecOp.put(v, operation);
+                    break;
+                }
+            }
+        }
+    }
+
+    void updateCsecInPair(CsecOperation w, Operation v){
+        if (!v.isCsecOperation){
+            for (Operation operation : w.OperationList){
+                if (v.isBot()){
+                    inCsecOp.put(w, operation);
+                    break;
+                }
+                LinkedList<Operation> matchList;
+                if(operation.isRecv()){
+                    matchList = graph.program.matchTables.get(operation);
+                }else matchList = graph.program.matchTablesForS.get(operation);
+                if(matchList.contains(v)){
+                    inCsecOp.put(w,operation);
+                    break;
+                }
+            }
+        }
+    }
+
     public void printCycles(Stack<Operation> stack){
         System.out.println("[JOHNSON]: THE CYCLE IS AS FOLLOWING :");
         for(Operation operation : stack){
@@ -270,38 +365,83 @@ public class Johnson {
         return patterns;
     }
 
-    boolean isNewPattern(Pattern pattern){
+    boolean isNewPattern(Stack<Operation> stack){
+        Hashtable<Integer, Operation> patterntable = Pattern.generatePatternTable(stack,checkInfiniteBuffer);
         for(Pattern pattern1 : patterns){
-            if(pattern.pattern.equals(pattern1.pattern)){
+            if(patterntable.equals(pattern1.patternTable)){
                 return false;
             }
         }
         return true;
     }
 
-    public static void main(String[] args) {
-        Program program = new Program("./src/test/fixtures/diffusion2d4.txt",false);
-        NewProgram newProgram = new NewProgram(program);
-//        program.checkInfiniteBuffer = false;
-//        newProgram.checkInfiniteBuffer = false;
-        Graph graph = new Graph(newProgram);
-        graph.printGraphETable();
-//        graph.printGraphVList();
-        Johnson johnson = new Johnson(graph);
-        System.out.println("the pattens size is : "+johnson.patterns.size());
-        System.out.println(program.checkInfiniteBuffer);
-        for(Pattern pattern : johnson.getPatterns()){
-            pattern.printPattern();
+    Stack<Operation> updateStack(Stack<Operation> stack){
+        Stack<Operation> stack1 = new Stack<>();
+        for (Operation operation : stack){
+            if (!operation.isCsecOperation) stack1.add(operation);
+            else{
+                stack1.add(inCsecOp.get(operation));
+            }
         }
+        return stack1;
     }
 
-    public void printleastSCC(Set<Operation> set){
-        for (Operation operation : set){
-            System.out.print(" "+operation.getStrInfo()+" ");
-        }
-        System.out.println(" ");
+    public static void main(String[] args) {
+//        String directoryName = "./src/test/fixtures";
+//        File Dire = new File(directoryName);
+//        Program program;
+//        for(File file : Dire.listFiles()){
+//            if(!file.isDirectory()){
+//                System.out.println("-----------------------"+file.getName()+"----------------------");
+//                long t1 = System.currentTimeMillis();
+//                program = new Program(file.getPath(),false);
+//                Graph graph = new Graph(program);
+//                Johnson johnson = new Johnson(graph);
+//                long t2 = System.currentTimeMillis();
+//                System.out.println("Program executes " + ((double)(t2-t1))/(double)1000 + "seconds");
+////                program = new Program(file.getPath(),false);
+////                NewProgram newProgram = new NewProgram(program);
+////                Graph graph1 = new Graph(newProgram);
+////                Johnson johnson1 = new Johnson(graph1);
+////                long t3 = System.currentTimeMillis();
+////                System.out.println("Program executes " + ((double)(t3-t2))/(double)1000 + "seconds");
+//                System.out.println(" the patterns number is : "+johnson.patterns.size());
+//                System.out.println(" filter pattern has : "+johnson.filterNum);
+//                System.out.println(" filter by smt solver has : "+johnson.filterSMTNum);
+//                System.out.println("====================================\n");
+//            }
+//        }
+        assert true;
+        long t1 = System.currentTimeMillis();
+//        Program program = new Program("./src/test/fixtures/is256.txt",true);
+        NewProgram program = new NewProgram("./src/test/fixtures/diffusion2d4.txt",false);
+//        Program program = new Program("./src/test/fixtures/deep100.txt",true);
+        System.out.println("calls number is : "+program.getOpsCount());
+        Graph graph = new Graph(program);
+//        graph.printGraphETable();
+        Johnson johnson = new Johnson(graph);
+        System.out.println(" the patterns number is : "+johnson.patterns.size());
+        System.out.println(" filter pattern has : "+johnson.filterNum);
+        System.out.println(" filter by smt solver has : "+johnson.filterSMTNum);
+        long t2 = System.currentTimeMillis();
+        System.out.println("Program executes " + ((double)(t2-t1))/(double)1000 + "seconds");
+
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class TarjanSCC {
     private boolean[] marked;        // marked[v] = has v been visited?
