@@ -20,7 +20,7 @@ import java.util.*;
  *       2.construct the sufficiently small over-approximated set of match-pairs
  *       3.construct the partial order based on happens-before relation
  */
-public class Program {
+public class Program implements Cloneable{
     public ArrayList<Process> processes;
     public Hashtable<Operation, LinkedList<Operation>> matchTables;//all matches like: <r,list<s>>
     public Hashtable<Operation, LinkedList<Operation>> matchTablesForS;//all matches like: <s,list<r>>
@@ -186,15 +186,14 @@ public class Program {
         }
     }
 
-    public void printOps() {
-        System.out.println("[PROGRAM]: ALL THE OPERATIONS ARE : ");
+    public int getOpsCount() {
+        int count = 0;
         for (Process process : processes) {
-            System.out.println("Process " + process.rank);
             for (Operation operation : process.ops) {
-                System.out.println("   " + operation.getStrInfo());
+                count += 1;
             }
         }
-
+        return count;
     }
 
     public void printALLOperations() {
@@ -203,32 +202,46 @@ public class Program {
         for (Process process : processes) {
             System.out.println("TYPE P D I");
             for (Operation operation : process.ops) {
-                if (operation.isSend()) {
-                    System.out.println(operation.type + " " + operation.proc + " " + operation.dst + " "
-                            + operation.rank);
-                } else if (operation.isRecv()) {
-                    System.out.println(operation.type + " " + operation.proc + " " + operation.src + " "
-                            + operation.rank);
-                } else if (operation.isWait()) {
-                    System.out.println(operation.type + " " + operation.proc + " " + operation.req.rank + " " + operation.rank);
-                } else if (operation.isBarrier()) {
-                    System.out.println(operation.type + " " + operation.proc + " " + operation.rank + " " + operation.group);
-                }
+                System.out.println(operation);
             }
             System.out.println(" ");
         }
     }
 
+//    public void printMatchOrderOps(){
+//        System.out.println("ALL OPERATIONS IN MATCH-ORDER KEYSET ARE :");
+//        for(Set<Operation> listv : matchOrderTables.values()){
+//            for(Operation operation:listv){
+//                System.out.print(" "+operation.getStrInfo()+" ");
+//
+//            }
+//        }
+//        System.out.println(" ");
+//    }
+//
     public boolean isCheckInfiniteBuffer() {
         return checkInfiniteBuffer;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws CloneNotSupportedException {
         Program program = new Program("./src/test/fixtures/monte4.txt");
 
 //        program.printALLOperations();
         program.printMatchPairs();
     }
 
-
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        Program program = null;
+        try {
+            program = (Program) super.clone();
+        }catch (CloneNotSupportedException e){
+            System.out.println("ERROR CLONE NOT SUPPORTED EXCEPTION!");
+        }
+        program.processes = new ArrayList<>();
+        for (Process process : processes){
+            program.processes.add((Process) process.clone());
+        }
+        return program;
+    }
 }

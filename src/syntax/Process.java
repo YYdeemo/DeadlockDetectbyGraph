@@ -4,7 +4,7 @@ import constant.OPTypeEnum;
 
 import java.util.LinkedList;
 
-public class Process {
+public class Process implements Cloneable{
     public int rank;
     public LinkedList<Operation> ops;
     public LinkedList<Operation> rlist;
@@ -89,5 +89,19 @@ public class Process {
             indicator++;
         }
         return indicator;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        Process process = null;
+        try {
+            process = (Process) super.clone();
+        }catch (CloneNotSupportedException e ){
+            System.out.println("ERROR: "+e);
+        }
+        process.ops = (LinkedList<Operation>) ops.clone();
+        process.slist = (LinkedList<Operation>) slist.clone();
+        process.rlist = (LinkedList<Operation>) rlist.clone();
+        return process;
     }
 }

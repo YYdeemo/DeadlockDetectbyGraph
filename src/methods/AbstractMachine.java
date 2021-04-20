@@ -42,7 +42,9 @@ public class AbstractMachine {
             if (!this.pattern.containsKey(i)) {
                 indicator[i] = -1;
             } else {
-                indicator[i] = this.pattern.get(i).rank;//equal the match
+                int ind = program.get(i).ops.indexOf(this.pattern.get(i));
+                if (ind==-1) indicator[i] = program.get(i).ops.size();
+                else indicator[i] = ind;
 //                indicator[i] = program.processes.get(i).ToPoint(pattern.get(i));
             }
             tracker[i] = 0;
@@ -51,11 +53,11 @@ public class AbstractMachine {
         while (true) {
             int old_tracker[] = tracker.clone();
 
-            if (reachedControlPoint() == Status.REACHABLE) {
+            /*if (reachedControlPoint() == Status.REACHABLE) {
                 candidate.tracker = tracker.clone();
                 candidate.DeadlockCandidate = true;
                 return Status.REACHABLE;
-            }
+            }*/
 
             for (Process process : program.getAllProcesses()) {
                 while (true) {
@@ -63,9 +65,10 @@ public class AbstractMachine {
                     if (tracker[process.rank] == process.Size()) break;
 
                     Operation operation = process.getOP(tracker[process.rank]);
-//                    System.out.println("[ABSTRACT MACHINE]: NOW CHECKING "+operation.getStrInfo()+" OPERATION.");
+//                    System.out.print("[ABSTRACT MACHINE]: NOW CHECKING "+operation+" ");
 //
                     if (tracker[process.rank] == indicator[process.rank]) {
+//                        System.out.print(" -> reach! \n");
 //                        assert operation.isWait() || operation.isBarrier();
 //                        System.out.println("[ABSTRACT MACHINE]: * NOW PROCESS "+process.rank+ " STOP AT "+operation.getStrInfo());
                         break;//stop at this operation which is recorded by the indicator in this process
@@ -74,16 +77,19 @@ public class AbstractMachine {
                     if (operation.isSend()) {
                         appendOpInShape(operation);
                         tracker[process.rank]++;
+//                        System.out.print(" -> succe! \n");
 
                     } else if (operation.isRecv()) {
                         appendOpInShape(operation);
                         tracker[process.rank]++;
+//                        System.out.print(" -> succe! \n");
 
                     } else if (operation.isWait()) {
                         Operation req = operation.req;
                         assert req.isRecv() || req.isSend();
                         if (req.isRecv()) {
                             if (!checkAvailable(req)){
+//                                System.out.print(" -> failed \n");
                                 break;
                             }
 
@@ -91,6 +97,8 @@ public class AbstractMachine {
 
                         }
                         tracker[process.rank]++;
+//                        System.out.print(" -> succe! \n");
+//                        break;
 
                     } else if (operation.isBarrier()) {
                         boolean allisBarrier = true;
@@ -110,7 +118,7 @@ public class AbstractMachine {
                         tracker[process.rank]++;
                     }
 
-                    if (indicator[process.rank] == -1) break;
+//                    if (indicator[process.rank] == -1) break;
                 }
                 boolean hasChange = false;
                 for (int i = 0; i < program.getSize(); i++) {
@@ -154,12 +162,6 @@ public class AbstractMachine {
         }
     }
 
-    void consume(Pair<Integer, Integer> pair, int idx) {
-        recvInShape.put(pair, recvInShape.get(pair) - idx);
-        sendInShape.put(pair, sendInShape.get(pair) - idx);
-//        System.out.println("[CONSUME]:  "+send.getStrInfo()+" <--> "+recv.getStrInfo());
-    }
-
     boolean checkAvailable(Operation operation){
         Pair<Integer,Integer> pair = new Pair<>(operation.dst,-1);
         if (operation.isRecv()){
@@ -196,12 +198,14 @@ public class AbstractMachine {
             }
         }
         for (int i = 0; i < program.getSize(); i++){
-            Operation operation = program.get(i).getOP(tracker[i]).req;
-            if (pattern.keySet().contains(i)){
-                if (!mayDeadlock(operation)){
-                    return Status.UNREACHABLE;
+            if(tracker[i]<program.get(i).Size()) {
+                Operation operation = program.get(i).getOP(tracker[i]).req;
+                if (pattern.keySet().contains(i)) {
+                    if (!mayDeadlock(operation)) {
+                        return Status.UNREACHABLE;
+                    }
+                    continue;
                 }
-                continue;
             }
         }
 

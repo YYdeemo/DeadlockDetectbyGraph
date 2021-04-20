@@ -6,7 +6,7 @@ import javafx.util.Pair;
 /**
  *
  */
-public class Operation implements Comparable{
+public class Operation implements Comparable,Cloneable{
     public int index;//the rank is index of list which actions with same endpoint
     public int indx;//index in program, total number, which contains bot and barrier
     public int rank;//the rank of the process, Line number
@@ -92,5 +92,10 @@ public class Operation implements Comparable{
     @Override
     public String toString() {
         return this.type+" "+this.proc+"_"+this.rank;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return super.clone();
     }
 }

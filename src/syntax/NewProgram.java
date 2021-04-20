@@ -4,7 +4,7 @@ import com.sun.tools.classfile.Opcode;
 
 import java.util.*;
 
-public class NewProgram extends Program{
+public class NewProgram extends Program implements Cloneable{
     public Hashtable<Operation, CsecOperation> csecOpsTables;
 
 
@@ -59,9 +59,10 @@ public class NewProgram extends Program{
         }
         for (CsecOperation csecOperation : csecOpsTables.values()){
             Process process = this.get(csecOperation.proc);
+            int rank = process.ops.indexOf(csecOperation.OperationList.getFirst());
             if (!process.ops.contains(csecOperation)) {
-                process.append(csecOperation, csecOperation.rank);
-                process.append(csecOperation.Nearstwait, csecOperation.rank + 1);
+                process.append(csecOperation.Nearstwait, rank);
+                process.append(csecOperation, rank);
                 for (Operation operation : csecOperation.OperationList){
                     process.remove(operation);
                     process.remove(operation.Nearstwait);
@@ -164,17 +165,41 @@ public class NewProgram extends Program{
     }
 
     public void printCsecOps(){
-        for (CsecOperation csecOp : csecOpsTables.values()){
-            System.out.println(csecOp.getStrInfo());
+        for (CsecOperation csecOp : new HashSet<>(csecOpsTables.values())){
+            System.out.print(csecOp.getStrInfo()+" : <");
             for (Operation operation : csecOp.OperationList){
                 System.out.print(" "+operation.getStrInfo()+" ");
             }
+            System.out.print("> " +csecOp.Nearstwait+"\n");
         }
     }
 
-    public static void main(String[] args) {
+    public void updateCsceOpsTables(CsecOperation operation){
+        for (Operation op : operation.OperationList) {
+            csecOpsTables.put(op, operation);
+        }
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        NewProgram newProgram = null;
+        try {
+            newProgram = (NewProgram) super.clone();
+        }catch (CloneNotSupportedException e){
+
+        }
+        newProgram.csecOpsTables = (Hashtable<Operation, CsecOperation>) csecOpsTables.clone();
+        return newProgram;
+    }
+
+    public static void main(String[] args) throws CloneNotSupportedException {
         NewProgram newProgram = new NewProgram("./src/test/fixtures/diffusion2d4.txt", false);
-        newProgram.printOps();
+        System.out.println(newProgram.csecOpsTables.size());
+        NewProgram newProgram1 = (NewProgram) newProgram.clone();
+        System.out.println(newProgram1.csecOpsTables.size());
+        newProgram.csecOpsTables.clear();
+        System.out.println(newProgram.csecOpsTables.size());
+        System.out.println(newProgram1.csecOpsTables.size());
 
     }
 }
