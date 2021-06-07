@@ -443,7 +443,7 @@ public class SMTSolverNew {
         for (Operation sRecv : ((CsecOperation) recv).OperationList){
             BoolExpr a = null;
             for (Operation send : program.matchTables.get(sRecv)){
-                if (send.rank < program.get(send.proc).getOP(lastRank[send.proc]).req.rank){
+                if (send.rank < lastRank[send.proc]-1){
                     BoolExpr c = null;
                     if (program instanceof NewProgram && ((NewProgram)program).csecOpsTables.containsKey(send)){
                         Operation send2 = ((NewProgram)program).getCsecOp(send);
@@ -489,7 +489,7 @@ public class SMTSolverNew {
         for (Operation sSend : ((CsecOperation) send).OperationList){
             BoolExpr a = null;
             for (Operation recv : program.matchTablesForS.get(sSend)){
-                if (recv.rank < program.get(recv.proc).getOP(lastRank[recv.proc]).req.rank){
+                if (recv.rank < lastRank[recv.proc]-1){
                     BoolExpr c = null;
                     if (program instanceof NewProgram && ((NewProgram) program).csecOpsTables.containsKey(recv)){
                         Operation recv2 = ((NewProgram)program).getCsecOp(recv);

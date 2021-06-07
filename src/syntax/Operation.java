@@ -87,6 +87,7 @@ public class Operation implements Comparable,Cloneable{
     public int compareTo(Object op) {
         int compareRank = ((Operation) op).indx;
         return this.indx-compareRank;
+//        return compareRank-this.indx;
     }
 
     @Override

@@ -65,7 +65,7 @@ public class AbstractMachine {
                     if (tracker[process.rank] == process.Size()) break;
 
                     Operation operation = process.getOP(tracker[process.rank]);
-//                    System.out.print("[ABSTRACT MACHINE]: NOW CHECKING "+operation+" ");
+//                    System.out.println("[ABSTRACT MACHINE]: NOW CHECKING "+operation+" ");
 //
                     if (tracker[process.rank] == indicator[process.rank]) {
 //                        System.out.print(" -> reach! \n");
@@ -120,17 +120,17 @@ public class AbstractMachine {
 
 //                    if (indicator[process.rank] == -1) break;
                 }
-                boolean hasChange = false;
-                for (int i = 0; i < program.getSize(); i++) {
-                    if (old_tracker[i] != tracker[i]) {
-                        hasChange = true;
-                        break;
-                    }
-                }
-                if (!hasChange) {
-                    return reachedControlPoint();
-                }
 //                find the deadlock or reach all the control points;
+            }
+            boolean hasChange = false;
+            for (int i = 0; i < program.getSize(); i++) {
+                if (old_tracker[i] != tracker[i]) {
+                    hasChange = true;
+                    break;
+                }
+            }
+            if (!hasChange) {
+                return reachedControlPoint();
             }
         }
     }
@@ -192,6 +192,7 @@ public class AbstractMachine {
 
     Status reachedControlPoint() {
         for (int i = 0; i < program.getSize(); i++) {
+//            System.out.println("process_"+i+" indicator = "+indicator[i]+" tracker = "+tracker[i]);
             if (indicator[i] != -1 && indicator[i] != tracker[i]) {
 //                System.out.println("[ABSTRACT MACHINE]: SORRY! CANNOT REACH THE CONTROL POINT!");
                 return Status.UNREACHABLE;
@@ -209,7 +210,7 @@ public class AbstractMachine {
             }
         }
 
-        System.out.println("[ABSTRACT MACHINE]: REACH ALL CONTROL POINTS!");
+//        System.out.println("[ABSTRACT MACHINE]: REACH ALL CONTROL POINTS!");
         candidate.setTracker(tracker);
         return Status.REACHABLE;
     }

@@ -38,36 +38,41 @@ public class MatchPairs {
         for (Process process : program.getAllProcesses()) {
             for (Operation send : process.slist) {
                 if (sendList[send.dst][process.rank] == null) sendList[send.dst][process.rank] = new LinkedList<>();
-                sendList[send.dst][process.rank].add(send);
+                if (!sendList[send.dst][process.rank].contains(send)) sendList[send.dst][process.rank].add(send);
             }
         }
         //for each recv we find the set of sends which can match with it
         for (Process process : program.getAllProcesses()) {
             int[] rCount = new int[program.getSize() + 1];
             int sTotalCountForR = 0;
-            for (int j = 0; j < sendList[process.rank].length; j++) {
+            for (int j = 0; j < program.getSize(); j++) {
                 if (sendList[process.rank][j] != null)
                     sTotalCountForR += sendList[process.rank][j].size();
             }
             for (Operation recv : process.rlist) {
                 if(!matchTables.containsKey(recv)) matchTables.put(recv, new LinkedList<Operation>());
                 LinkedList<Operation> sforR = new LinkedList<>();//the list of sends which can match with the recv
-                for (int j = 0; j < sendList[process.rank].length; j++) {
+                for (int j = 0; j < program.getSize(); j++) {
                     if (sendList[process.rank][j] == null) continue;
                     Iterator<Operation> iterator_s = sendList[process.rank][j].iterator();
                     while (iterator_s.hasNext()) {
                         Operation send = iterator_s.next();
                         if ((recv.src == send.src || recv.src == -1)//rule
-                                && send.index <= rCount[send.dst] + rCount[program.getSize()] + 1 //rule 1
-                                && send.index >= rCount[send.dst] + rCount[program.getSize()] - Integer.max(0, (sTotalCountForR - sendList[send.dst][send.src].size())) //rule2
-                        ) sforR.add(send);
+                                && send.index <= rCount[send.src] + rCount[program.getSize()]//rule 1
+                                && send.index >= rCount[send.src] + Integer.max(0,rCount[program.getSize()]-(sTotalCountForR-sendList[send.dst][send.src].size()))
+//                                && send.index >= rCount[send.src] + rCount[program.getSize()] - Integer.max(0, (sTotalCountForR - sendList[send.dst][send.src].size())) //rule2
+                        ) {
+//                            System.out.println("<"+send+", "+recv+">");
+//                            System.out.print(" "+send.index+" "+rCount[send.src]+" "+rCount[program.getSize()]+" "+sTotalCountForR+"\n");
+                            sforR.add(send);
+                        }
                     }
                 }
 //                System.out.println("recv.src"+recv.src);
                 if (recv.src == -1) {
                     rCount[program.getSize()]++;
                 } else {
-                    rCount[recv.dst]++;
+                    rCount[recv.src]++;
                 }
                 if (!sforR.isEmpty()) matchTables.put(recv, sforR);
             }

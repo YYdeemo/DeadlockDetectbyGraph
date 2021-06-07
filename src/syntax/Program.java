@@ -200,7 +200,7 @@ public class Program implements Cloneable{
         System.out.println("[PROGRAM]: the program:");
 
         for (Process process : processes) {
-            System.out.println("TYPE P D I");
+            System.out.println("TYPE P_id");
             for (Operation operation : process.ops) {
                 System.out.println(operation);
             }
