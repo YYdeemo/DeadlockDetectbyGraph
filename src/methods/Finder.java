@@ -2,66 +2,101 @@ package methods;
 
 import com.microsoft.z3.Model;
 import constant.Status;
+import javafx.util.Pair;
 import smt.SMTSolver;
-import syntax.Graph;
-import syntax.Pattern;
-import syntax.Program;
+import syntax.*;
 
 import javax.swing.*;
 import java.io.File;
+import java.nio.file.OpenOption;
+import java.util.Arrays;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.logging.FileHandler;
 
 
 public class Finder {
-    public Graph graph;
-    public Program program;
-    LinkedList<Pattern> patterns;
+    String filename;
+    boolean infiniteBuffer;
+    boolean checkAll;
 
-    public Finder(Program program){
-        this.program = program;
-        this.graph = new Graph(program);
-//        graph.printGraphETable();
-        Johnson johnson = new Johnson(graph);
-        patterns = johnson.getPatterns();
-
-        System.out.println("[FINDER]: PATTERNS NUMBER IS : "+patterns.size());
-        if(patterns.size()==0) System.out.println("[FINDER]: THERE IS NO PATTEREN!");
-        AbstractMachine abstractMachine;
-        for(Pattern pattern : patterns){
-            pattern.printPattern();
-            abstractMachine = new AbstractMachine(program, pattern);
-            if(abstractMachine.execute()== Status.REACHABLE){
-                System.out.println("[ABSTRACT MACHINE] YES! CHECK THIS CYCLE IS DEADLOCK CANDIDATE!");
-                SMTSolver solver = new SMTSolver(program, pattern);
-                solver.encode();
-                Model model = solver.check();
-                if(model!=null){
-                    System.out.println("[FINDER]: SAT! THE DEADLOCK CANDIDATE IS REAL Deadlock");
-                }else{
-                    System.out.println("[FINDER]: UNSAT! No deadlock is found for pattern:");
-                    pattern.DeadlockCandidate = false;
-                }
-            }else{
-                System.out.println("CANNOT! ABSTRACT MACHINE CANNOT REACH THE CONTROL POINTS!");
-            }
-        }
-        System.out.println("FINISH FIND !");
+    public Finder(String filename, boolean infiniteBuffer, boolean checkAll) {
+        this.filename = filename;
+        this.infiniteBuffer = infiniteBuffer;
+        this.checkAll = checkAll;
     }
 
-    public static void main(String[] args){
-//        String directoryName = "./src/test/fixtures";
-//        File Dire = new File(directoryName);
-//        for(File file : Dire.listFiles()){
-//            if(!file.isDirectory()){
-//                System.out.println("-----------------------"+file.getName()+"----------------------");
-//                Program program = new Program(file.getPath());
-//                Finder finder = new Finder(program);
-//            }
-//        }
+    public void find(){
+        String directoryName = "./src/test/fixtures";
+        File Dire = new File(directoryName);
+        Program program;
+        for (File file : Dire.listFiles()) {
+            program = null;
+            if (!file.isDirectory()) {
+                String regex = filename + ".txt";
+                if (!file.getName().matches(regex)) continue;
+                System.out.println("-----------------------" + file.getName() + "----------------------");
+//                long t1 = System.currentTimeMillis();
+                program = new Program(file.getPath(), infiniteBuffer);
+                Graph graph = new Graph(program);
+                long t1 = System.currentTimeMillis();
+                System.out.println("in Graph has " + graph.getVCount() + " Vectors and " + graph.getECount() + " Edges");
+                Johnson johnson = new Johnson(graph);
+                for (Pattern pattern : johnson.patterns) {
+//                    pattern.check();
+//                    if (pattern.status == Status.SATISFIABLE) {
+//                        if (!checkAll) break;
+//                    } else if (pattern.status == Status.UNSATISFIABLE) {
+//                        johnson.filterSMTNum++;
+//                    } else {
+//                        johnson.filterNum++;
+//                    }
+                }
+                long t2 = System.currentTimeMillis();
+                System.out.println("Program executes " + ((double) (t2 - t1)) / (double) 1000 + "seconds");
+                System.out.println(" the patterns number is : " + johnson.patterns.size());
+                System.out.println(" filter pattern has : " + johnson.filterNum);
+                System.out.println(" filter by smt solver has : " + johnson.filterSMTNum);
+                System.out.println("====================================\n");
+            }
+        }
+    }
 
-        Program program = new Program("./src/test/fixtures/2.txt");
-        Finder finder = new Finder(program);
+    public void findNew(){
+        String directoryName = "./src/test/fixtures";
+        File Dire = new File(directoryName);
+        NewProgram newProgram;
+        for (File file : Dire.listFiles()) {
+            newProgram = null;
+            if (!file.isDirectory()) {
+                String regex = filename+".txt";
+                if (!file.getName().matches(regex)) continue;
+                System.out.println("-----------------------" + file.getName() + "----------------------");
+                long t1 = System.currentTimeMillis();
+                newProgram = new NewProgram(file.getPath(), infiniteBuffer);
+                Graph graph = new Graph(newProgram);
+                System.out.println("in Graph has " + graph.getVCount() + " Vectors and "+ graph.getECount()+" Edges");
+//                long t1 = System.currentTimeMillis();
+                JohnsonNew johnson = new JohnsonNew(graph,checkAll);
+                long t2 = System.currentTimeMillis();
+                System.out.println("Program executes " + ((double) (t2 - t1)) / (double) 1000 + "seconds");
+                System.out.println(" the patterns number is : " + johnson.patterns.size());
+                System.out.println(" filter pattern has : " + johnson.filterNum);
+                System.out.println(" filter by smt solver has : " + johnson.filterSMTNum);
+                System.out.println("====================================\n");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+//        String filename = "((diffusion2d(4|8|16|32))|(monte(8|16|32|64))|(heat(8|16|32|64))|(floyd(8|16|32|64|128))|(ge(8|16|32|64|128))|(integrate(8|10|16|32|64|128))|(is(256|64|128)))";
+//        String filename = "((diffusion2d(4|8|16|32))|(monte(8|16|32|64))|(heat(8|16|32|64))|(floyd(8|16|32|64|128))|(is(256|64|128)))";
+//        String regex = "((diffusion2d(4|8|16|32|64))|(heat(8|16|32|64))|(monte(8|16|32|64))).txt";
+//        String filename = "((diffusion2d(4|8|16))|(heat(8|16|32|64))|(monte(8|16)))";
+        String filename = "(test3)";
+        Finder finder = new Finder(filename, false, false);
+//        finder.find();
+        finder.findNew();
 
     }
 }

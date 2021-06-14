@@ -40,7 +40,7 @@ public class Program implements Cloneable{
         initializeProgramFromCTP(filepath);
         setMatchTables();
         setMatchOrderTables();
-        System.out.println("[PROGRAM]:FINISH INIT THE MPI PROGRAM.");
+//        System.out.println("[PROGRAM]:FINISH INIT THE MPI PROGRAM.");
 
     }
     public Program(String filepath, boolean checkInfiniteBuffer) {
@@ -50,7 +50,7 @@ public class Program implements Cloneable{
         initializeProgramFromCTP(filepath);
         setMatchTables();
         setMatchOrderTables();
-        System.out.println("[PROGRAM]:FINISH INIT THE MPI PROGRAM.");
+//        System.out.println("[PROGRAM]:FINISH INIT THE MPI PROGRAM.");
 
     }
 

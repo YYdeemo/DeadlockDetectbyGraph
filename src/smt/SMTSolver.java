@@ -152,6 +152,7 @@ public class SMTSolver {
         }
         for (Operation operation : candidate.patternTable.values()) {
             if (operation.isWait()) {
+                solver.add(ctx.mkEq(complete(operation.req),ctx.mkBool(false)));
                 if (operation.req.isRecv()) {
                     for (Operation matchOp : program.matchTables.get(operation.req)) {
                         if (matchOp.rank < candidate.tracker[matchOp.proc]-1)

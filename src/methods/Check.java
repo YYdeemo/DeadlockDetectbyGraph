@@ -4,6 +4,7 @@ import com.microsoft.z3.Model;
 import constant.Status;
 import smt.SMTSolver;
 import smt.SMTSolverNew;
+import smt.SMTSolver_2;
 import syntax.*;
 import syntax.Process;
 
@@ -30,10 +31,12 @@ public class Check {
             if (program instanceof NewProgram) {
                 NewProgram newProgram = (NewProgram) program;
                 SMTSolverNew solver = new SMTSolverNew(newProgram, pattern);
+//                SMTSolver_2 solver = new SMTSolver_2(newProgram, pattern);
 //                solver.printActs();
                 solver.encode();
                 model = solver.check();
 //                solver.displayExprs();
+//                if (model != null)solver.displayExprs();
 //                solver.printAllExprs();
             }
             else{
@@ -49,6 +52,7 @@ public class Check {
 //                System.out.println(" SAT model is :"+model);
                 System.out.println("[FINDER]: SAT! Deadlock detected for "+pattern.patternTable.values());
 //                pattern.printPattern();
+
                 pattern.DeadlockCandidate = true;
                 return Status.SATISFIABLE;
             } else {

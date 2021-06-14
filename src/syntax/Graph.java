@@ -29,7 +29,7 @@ public class Graph {
             initGraphNew();
         else
             initGraph();
-        System.out.println("[GRAPH]: FINISH INIT GRAPH FROM A PROGRAM");
+//        System.out.println("[GRAPH]: FINISH INIT GRAPH FROM A PROGRAM");
         Collections.sort(VList);
         for(Operation op : ETable.keySet()){
             Collections.sort(ETable.get(op));

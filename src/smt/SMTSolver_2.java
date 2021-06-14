@@ -2,8 +2,6 @@ package smt;
 
 
 import com.microsoft.z3.*;
-import com.sun.org.apache.bcel.internal.generic.LNEG;
-import sun.jvm.hotspot.debugger.SymbolLookup;
 import syntax.*;
 import syntax.Pattern;
 import syntax.Process;
@@ -16,7 +14,7 @@ import java.util.Set;
 /**
  * the SMT solver
  */
-public class SMTSolverNew {
+public class SMTSolver_2 {
 
     NewProgram program;
     Pattern candidate;
@@ -38,7 +36,7 @@ public class SMTSolverNew {
     public boolean isNewProgram;
 
 
-    public SMTSolverNew(NewProgram program, Pattern pattern) throws Z3Exception {
+    public SMTSolver_2(NewProgram program, Pattern pattern) throws Z3Exception {
         this.program = program;
         this.candidate = pattern;
         ExprList = new LinkedList<>();
@@ -235,11 +233,11 @@ public class SMTSolverNew {
         csecRecvExpr.put("w", ctx.mkIntConst("wait"+recv.toString()));
         csecRecvExpr.put("c", ctx.mkBoolConst("complete"+recv.toString()));
 
-        for (int i = 0; i < ((CsecOperation)recv).OperationList.size(); i++) {
+        for (int i = 0; i < ((CsecOperation)recv).OperationList.size(); i = i+((CsecOperation)recv).OperationList.size()-1) {
             ctx.mkStore(csecRecvExpr.get("t"),ctx.mkInt(i),ctx.mkIntConst("time"+((CsecOperation)recv).OperationList.get(i).toString()));
             ctx.mkStore(csecRecvExpr.get("m"),ctx.mkInt(i),ctx.mkIntConst("match"+((CsecOperation)recv).OperationList.get(i).toString()));
         }
-        
+
         return csecRecvExpr;
     }
 
@@ -368,29 +366,41 @@ public class SMTSolverNew {
         );
     }
 
-    BoolExpr mkMatchCS(Operation CsecOp, Operation SingleOp, int index) throws Z3Exception {
+    BoolExpr mkMatchCS(Operation CsecSend, Operation SingleRecv, int index) throws Z3Exception {
         return ctx.mkAnd(
-                ctx.mkEq(getSingleMatch(CsecOp, index), time(SingleOp)),
-                ctx.mkEq(match(SingleOp), getSingleTime(CsecOp,index)),
-                ctx.mkLt(time(SingleOp), wait(CsecOp)),
-                ctx.mkLt(getSingleTime(CsecOp, index), wait(SingleOp)),
-                complete(SingleOp)
+                ctx.mkEq(getSingleMatch(CsecSend, index), time(SingleRecv)),
+                ctx.mkEq(match(SingleRecv), getSingleTime(CsecSend,index)),
+                ctx.mkLt(time(SingleRecv), wait(CsecSend)),
+                ctx.mkLt(getSingleTime(CsecSend, index), wait(SingleRecv)),
+                complete(SingleRecv)
         );
     }
 
-    BoolExpr mkMatchCC(Operation CsecOp1, Operation CsecOp2, int index1, int index2) throws Z3Exception {
+    BoolExpr mkMatchSC(Operation SingleSend, Operation CsecRecv) throws Z3Exception{
+        return ctx.mkAnd(
+                ctx.mkLt(getMinMatch(CsecRecv),time(SingleSend)),
+                ctx.mkLt(time(SingleSend),getMaxMatch(CsecRecv)),
+                ctx.mkLt(getMinTime(CsecRecv),match(SingleSend)),
+                ctx.mkLt(match(SingleSend),getMaxTime(CsecRecv)),
+                ctx.mkLt(time(SingleSend),wait(CsecRecv)),
+                ctx.mkLt(getMaxTime(CsecRecv),wait(SingleSend)),
+                complete(SingleSend)
+        );
+    }
+
+    BoolExpr mkMatchCC(Operation CsecSend, Operation CsecRecv, int sendIndex) throws Z3Exception {
         BoolExpr b = null;
-        int a1 = ((CsecOperation)CsecOp1).OperationList.size()-index1;
-        int a2 = ((CsecOperation)CsecOp2).OperationList.size()-index2;
-        for (int i = 0; i < ((a1<a2)? a1:a2) ; i++) {
-            BoolExpr a = ctx.mkAnd(
-                    ctx.mkEq(getSingleMatch(CsecOp1, index1+i),getSingleTime(CsecOp2,index2+i)),
-                    ctx.mkEq(getSingleTime(CsecOp1, index1+i),getSingleMatch(CsecOp2,index2+i)),
-                    ctx.mkLt(getSingleTime(CsecOp1,index1+i), wait(CsecOp2)),
-                    ctx.mkLt(getSingleTime(CsecOp2,index2+i), wait(CsecOp1))
-            );
-            b = (b != null) ? ctx.mkOr(b, a) : a;
-        }
+
+        b = ctx.mkAnd(
+             ctx.mkLt(getMinMatch(CsecRecv),getSingleTime(CsecSend,sendIndex)),
+                ctx.mkLt(getSingleTime(CsecSend,sendIndex),getMaxMatch(CsecRecv)),
+                ctx.mkLt(getMinTime(CsecRecv),getSingleMatch(CsecSend,sendIndex)),
+                ctx.mkLt(getSingleMatch(CsecSend,sendIndex),getMaxTime(CsecRecv)),
+                ctx.mkLt(getSingleTime(CsecSend,sendIndex),wait(CsecRecv)),
+                ctx.mkLt(getMaxTime(CsecRecv),wait(CsecSend))
+        );
+        if (sendIndex == ((CsecOperation) CsecSend).OperationList.size()-1) b = ctx.mkAnd(b,complete(CsecSend));
+
         return b;
     }
 
@@ -426,12 +436,12 @@ public class SMTSolverNew {
 //            if (!candidate.deadlockReqs.contains(send) && send.rank < candidate.tracker[send.proc]) {
             if(send.rank < lastRank[send.proc]){
                 BoolExpr a = null;
-                if (program instanceof NewProgram){
-                    Operation send2 = ((NewProgram)program).getCsecOp(send);
-                    if (send2.isCsecOperation)
-                        a = mkMatchCS(send2, recv, ((CsecOperation)send2).OperationList.indexOf(send));
-                    else a = mkMatch(recv, send);
-                }
+
+                Operation send2 = program.getCsecOp(send);
+                if (send2.isCsecOperation)
+                    a = mkMatchCS(send2, recv, ((CsecOperation) send2).OperationList.indexOf(send));
+                else a = mkMatch(recv, send);
+
                 b = (b != null) ? ctx.mkOr(b, a) : a;
             }
         }
@@ -442,24 +452,32 @@ public class SMTSolverNew {
 
     Expr mkCsecRecvMatch(Operation recv){
         Expr b = null;
-        int index = 0;
+        int size = 0;
+        Set<Operation> matchSend = new HashSet<>();
         for (Operation sRecv : ((CsecOperation) recv).OperationList){
-            BoolExpr a = null;
-            for (Operation send : program.matchTables.get(sRecv)){
-                if (send.rank < lastRank[send.proc]-1){
-                    BoolExpr c = null;
-                    if (program instanceof NewProgram && ((NewProgram)program).csecOpsTables.containsKey(send)){
-                        Operation send2 = ((NewProgram)program).getCsecOp(send);
-                        c = mkMatchCC(recv, send2, index, ((CsecOperation)send2).OperationList.indexOf(send));
-                    }
-                    else c = mkMatchCS(recv, send, index);
-                    a = (a != null) ? ctx.mkOr(a, c) : c;
-                }
-            }
-            b = (b != null) ? ctx.mkAnd(b, a) : a;
-            index++;
+            size += program.matchTables.get(sRecv).size();
+            matchSend.addAll(program.matchTables.get(sRecv));
         }
-        return b;
+        Expr<BoolSort>[] matchList = new Expr[size];
+        int i = 0;
+
+        for (Operation send : matchSend) {
+            if (send.rank < lastRank[send.proc] -1) {
+                BoolExpr c = null;
+                if (program instanceof NewProgram && ((NewProgram) program).csecOpsTables.containsKey(send)) {
+                    Operation send2 = ((NewProgram) program).getCsecOp(send);
+                    c = mkMatchCC(recv, send2, ((CsecOperation) send2).OperationList.indexOf(send));
+                } else c = mkMatchSC(send, recv);
+                matchList[i] = c;
+                i++;
+            }
+        }
+
+        for(int j = i;j<size;j++) matchList[j] = ctx.mkBool(false);
+        return ctx.mkAnd(
+                ctx.mkAtMost(matchList,((CsecOperation) recv).OperationList.size()),
+                ctx.mkAtLeast(matchList,((CsecOperation) recv).OperationList.size())
+        );
     }
 
     Expr mkSendMatch(Operation send) throws Z3Exception{
@@ -470,16 +488,14 @@ public class SMTSolverNew {
             return b;
         }
         for (Operation recv : program.matchTablesForS.get(send)) {
-            if(recv.rank < lastRank[recv.proc]){
+            if(recv.rank < lastRank[recv.proc]-1){
                 BoolExpr a = null;
-                if (program instanceof NewProgram){
-                    Operation recv2 = ((NewProgram)program).getCsecOp(recv);
-                    if (recv2.isCsecOperation) {
-//                        a = mkMatchCS(recv2, send, ((CsecOperation) recv2).OperationList.indexOf(recv));
-                        if (candidate.patternTable.values().contains(recv2.Nearstwait)) a = ctx.mkBool(false);
-                    }
-                    else a = mkMatch(recv, send);
-                }
+
+                Operation recv2 = program.getCsecOp(recv);
+                if (recv2.isCsecOperation)
+                    a = mkMatchSC(send, recv2);
+                else a = mkMatch(recv, send);
+
                 b = (b != null) ? ctx.mkOr(b, a) : a;
             }
         }
@@ -496,9 +512,9 @@ public class SMTSolverNew {
             for (Operation recv : program.matchTablesForS.get(sSend)){
                 if (recv.rank < lastRank[recv.proc]-1){
                     BoolExpr c = null;
-                    if (program instanceof NewProgram && ((NewProgram) program).csecOpsTables.containsKey(recv)){
-                        Operation recv2 = ((NewProgram)program).getCsecOp(recv);
-                        c = mkMatchCC(send, recv2, index, ((CsecOperation)recv2).OperationList.indexOf(recv));
+                    if (program.csecOpsTables.containsKey(recv)){
+                        Operation recv2 = program.getCsecOp(recv);
+                        c = mkMatchCC(send, recv2, index);
                     }
                     else c = mkMatchCS(send, recv, index);
                     a = (a != null) ? ctx.mkOr(a, c) : c;
@@ -572,9 +588,15 @@ public class SMTSolverNew {
 
     BoolExpr mkUniqueTimesandMatches(CsecOperation operation){
         BoolExpr b = null;
-        for (int i = 1; i < operation.OperationList.size(); i++) {
-            BoolExpr a = ctx.mkAnd(ctx.mkLt(ctx.mkSelect(time(operation),ctx.mkInt(i-1)), ctx.mkSelect(time(operation),ctx.mkInt(i))),
-            ctx.mkLt(ctx.mkSelect(match(operation),ctx.mkInt(i-1)), ctx.mkSelect(match(operation),ctx.mkInt(i))));
+        if (operation.isSend()) {
+            for (int i = 1; i < operation.OperationList.size(); i++) {
+                BoolExpr a = ctx.mkAnd(ctx.mkLt(ctx.mkSelect(time(operation), ctx.mkInt(i - 1)), ctx.mkSelect(time(operation), ctx.mkInt(i))),
+                        ctx.mkLt(ctx.mkSelect(match(operation), ctx.mkInt(i - 1)), ctx.mkSelect(match(operation), ctx.mkInt(i))));
+                b = (b != null) ? ctx.mkAnd(b, a) : a;
+            }
+        }else {
+            BoolExpr a = ctx.mkAnd(ctx.mkLt(ctx.mkSelect(time(operation),ctx.mkInt(0)),ctx.mkSelect(time(operation),ctx.mkInt(operation.OperationList.size()-1))),
+                    ctx.mkLt(ctx.mkSelect(match(operation),ctx.mkInt(0)),ctx.mkSelect(match(operation),ctx.mkInt(operation.OperationList.size()-1))));
             b = (b != null) ? ctx.mkAnd(b,a) : a;
         }
         return b;
