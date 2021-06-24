@@ -63,7 +63,7 @@ public class Check {
             }
         }else{
 //            System.out.print(".");
-//            System.out.println("[ABSTRACT MACHINE]: filter : "+pattern.patternTable.values());
+            System.out.println("[ABSTRACT MACHINE]: filter : "+pattern.patternTable.values());
         }
         return Status.UNREACHABLE;
     }

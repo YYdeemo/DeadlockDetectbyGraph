@@ -381,7 +381,7 @@ public class Johnson {
         if (isNewPattern(stack)) {
             Pattern pattern = new Pattern(graph.program, stack);
             patterns.add(pattern);
-            pattern.check();
+            /*pattern.check();
 //            foundDeadlock = true;//Need to be delete!
             boolean checkAll = false;
             if (pattern.status == Status.SATISFIABLE) {
@@ -391,7 +391,7 @@ public class Johnson {
                 filterNum += 1;
             } else if (pattern.status == Status.UNSATISFIABLE) {
                 filterSMTNum += 1;
-            }
+            }*/
             return true;
         }
         return false;

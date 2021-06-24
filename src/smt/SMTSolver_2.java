@@ -477,6 +477,7 @@ public class SMTSolver_2 {
         return ctx.mkAnd(
                 ctx.mkAtMost(matchList,((CsecOperation) recv).OperationList.size()),
                 ctx.mkAtLeast(matchList,((CsecOperation) recv).OperationList.size())
+
         );
     }
 
