@@ -1,0 +1,66 @@
+2021.3.6
+Q1:在send后面都有一个wait，但是wait应该等send匹配后才向后执行吗？不应该，send发往不同进程时咩有over-tacking的关系；
+Q2：当一个wildsend或send被匹配后，应该相应send或wildsend也被consume；
+Q3：patthern应该只有wait或barrier？****** pattern 中应该存放什么？？？ ok
+
+区分infinit buffer and zero buffer;
+for infiit buffer:
+   the wait of send, consume the wait util the send is issued;
+for zero buffer:
+    the wait of send, consume the wait util the send is completed.
+
+
+for a MPI program:
+init program:
+generate the match pairs: ?
+generate the match order: should consider the buffer is or not infinited or zero
+graph : is connected with match order results
+Johnson:
+abstract machine : ***
+SMT: *** ***
+
+2021.3.7
+
+Q1: JOHNSON 方法中不能找到所有正确的环 例子4.txt； 第一次的SCC 就是i=15；
+Q2：SMT中仍存在问题 null point Exception
+
+2021.3.8
+
+在abstract machine中， transition send rules： 添加了non-over tacking rule ; the old rule doesnot has the over-tacking
+
+2021.3.11
+
+NewProgram 需要保存所有有关于原来program的信息，然后构造新的program结构，在newprogram中 CsecOperation
+
+CsecOperation --> (r,r,..) or (s,s,..)
+there is need to find the csecOp from a normal r or s?
+
+refactor the matchpair, matchorder;
+graph need find normal r or s from csecOp
+Johnson like graph
+abstract machine need
+
+2022.3.13
+
+for zero buffer : send and wait;
+we think send is non-blocking; and wait is blocking ;
+but in cycles ;send can be the blocked point;
+but in abstract machine we think the wait is the control point
+
+2021.3.15
+
+在graph除应该考虑Vlist的顺序，横向的还是竖向的
+在找环的时候递归有问题 检查
+
+2021.10.28
+开始关于tag，collective operation， send modes的扩展，以及新的方法的构建
+关于tag：
+    operation本身已经拓展，需要在operation中注明tag的范围（需要区别转换后的tag的范围）
+    match-pairs的方法需要改进，查看是否能生成正确的match-pairs
+    happens-before也需要修改，扩展而非修改
+关于collective operation ，创建新类，转换方法
+    应该不影响match-pairs的生成和happens-before关系的生成，才可行
+方法总览：
+    1.read ctp file, this file contain: recv and send with tag, collective operation with group, four send modes
+    2.new program generation function: new match-pairs generation and happens-before generation
+    3.new SMT encoding: send modes
