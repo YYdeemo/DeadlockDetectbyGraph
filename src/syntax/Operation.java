@@ -16,6 +16,7 @@ public class Operation implements Comparable,Cloneable{
     public int tag;//tag
     public int group;//group
     public int reqID;//the req action's idx
+    public int root;//collective's root
     public Operation req;//for a wait ;the req is an operation which is witnessed by the wait
     public OPTypeEnum type;//the type is num : "send", "recv", "wait", "barrier", "bot"
     public Operation Nearstwait;//for a recv or a send, this wait is NearestWait
@@ -34,10 +35,11 @@ public class Operation implements Comparable,Cloneable{
         Nearstwait = null;
     }
 
-    public Operation(OPTypeEnum type, int rank, int indx, int proc, int group) {
+    // 5 features collective except barrier
+    public Operation(OPTypeEnum type, int index, int root, int proc, int group) {//collective operation;
         this.type = type;
-        this.rank = rank;
-        this.indx = indx;
+        this.index = index;
+        this.root = root;
         this.proc = proc;
         this.group = group;
     }
@@ -66,6 +68,12 @@ public class Operation implements Comparable,Cloneable{
     public boolean isWait() { return (this.type == OPTypeEnum.WAIT); }
 
     public boolean isBarrier() { return (this.type == OPTypeEnum.BARRIER); }
+    public boolean isBroadcast() {return (this.type == OPTypeEnum.BROADCAST); }
+    public boolean isGather() {return this.type == OPTypeEnum.GATHER; }
+    public boolean isReduce() {return this.type == OPTypeEnum.REDUCE; }
+    public boolean isScatter() { return this.type == OPTypeEnum.SCATTER; }
+
+    public boolean isCollective() { return isBarrier()||isBroadcast()||isReduce()||isGather()||isScatter(); }
 
     public boolean isBot() { return (this.type == OPTypeEnum.BOT); }
 
@@ -92,7 +100,16 @@ public class Operation implements Comparable,Cloneable{
 
     @Override
     public String toString() {
-        return this.type+" "+this.proc+"_"+this.rank;
+        if (this.isRecv())
+            return this.type+" "+this.proc+" "+this.src+" "+this.tag+" "+this.rank;
+        else if(this.isSend())
+            return this.type+" "+this.proc+" "+this.dst+" "+this.tag+" "+this.rank;
+        else if(this.isWait())
+            return this.type+" "+this.proc+" "+this.req.rank;
+        else if(this.isBarrier())
+            return this.type+" "+this.proc+" "+this.group+" "+this.rank;
+        else
+            return this.type+" "+this.proc+"_"+this.root+" "+this.group+" "+this.rank;
     }
 
     @Override

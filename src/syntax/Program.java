@@ -21,6 +21,8 @@ import java.util.*;
  *       3.construct the partial order based on happens-before relation
  */
 public class Program implements Cloneable{
+    public ArrayList<LinkedList<Operation>> operations;
+
     public ArrayList<Process> processes;
     public Hashtable<Operation, LinkedList<Operation>> matchTables;//all matches like: <r,list<s>>
     public Hashtable<Operation, LinkedList<Operation>> matchTablesForS;//all matches like: <s,list<r>>
@@ -93,7 +95,7 @@ public class Program implements Cloneable{
                     operation.rank = processes.get(operation.proc).Size();
                     processes.get(operation.proc).append(operation);
                 }
-                if (operation.isBarrier()) {
+                if (operation.isCollective()) {
                     if (!groups.containsKey(operation.group)) groups.put(operation.group, new LinkedList<Operation>());
                     groups.get(operation.group).add(operation);
                 }
@@ -105,11 +107,11 @@ public class Program implements Cloneable{
     void appendOpToQS(Operation operation) {
         if (operation.isSend()) {
             if (!sendqs.containsKey(operation.getHashCode()))
-                sendqs.put(operation.getHashCode(), new LinkedList<Operation>());
+                sendqs.put(operation.getHashCode(), new LinkedList<>());
             sendqs.get(operation.getHashCode()).add(operation);
         } else if (operation.isRecv() || operation.isIRecv()) {
             if (!recvqs.containsKey(operation.getHashCode()))
-                recvqs.put(operation.getHashCode(), new LinkedList<Operation>());
+                recvqs.put(operation.getHashCode(), new LinkedList<>());
             recvqs.get(operation.getHashCode()).add(operation);
         }
     }
@@ -223,13 +225,6 @@ public class Program implements Cloneable{
         return checkInfiniteBuffer;
     }
 
-    public static void main(String[] args) throws CloneNotSupportedException {
-        Program program = new Program("./src/test/fixtures/monte4.txt");
-
-//        program.printALLOperations();
-        program.printMatchPairs();
-    }
-
     @Override
     protected Object clone() throws CloneNotSupportedException {
         Program program = null;
@@ -243,5 +238,12 @@ public class Program implements Cloneable{
             program.processes.add((Process) process.clone());
         }
         return program;
+    }
+
+    public static void main(String[] args) {
+        Program program = new Program("./src/test/fixtures/combine/myTest.txt");
+
+        program.printALLOperations();
+//        program.printMatchPairs();
     }
 }
