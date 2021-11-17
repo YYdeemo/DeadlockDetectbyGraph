@@ -41,11 +41,11 @@ public class Process implements Cloneable{
 //            slist.remove(operation);
     }
 
-    public void appendToRList(Operation operation) {
+    private void appendToRList(Operation operation) {
         rlist.add(operation);
     }
 
-    public void appendToSList(Operation operation) {
+    private void appendToSList(Operation operation) {
         slist.add(operation);
     }
 
