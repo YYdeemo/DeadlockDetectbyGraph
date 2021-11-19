@@ -1,7 +1,8 @@
 package syntax;
 
 import constant.OPTypeEnum;
-import javafx.util.Pair;
+import constant.Pair;
+//import javafx.util.Pair;
 
 /**
  *
@@ -85,9 +86,9 @@ public class Operation implements Comparable,Cloneable{
         return isCsecOperation;
     }
 
-    public Pair<Integer, Integer> getHashCode(){
+    public Pair<Integer, Integer> getEndpoint(){
         //this hash code depends dst and src;
-        Pair<Integer, Integer> pair = new Pair<>(this.dst, this.src);
+        Pair<Integer, Integer> pair = new Pair<Integer,Integer>(this.dst, this.src);
         return pair;
     }
 
@@ -115,5 +116,13 @@ public class Operation implements Comparable,Cloneable{
     @Override
     protected Object clone() throws CloneNotSupportedException {
         return super.clone();
+    }
+
+    public static void main(String[] args) {
+        Operation a1 = new Operation(OPTypeEnum.SEND,0,0,0,1,0,0,0);
+        Operation a2 = new Operation(OPTypeEnum.SEND,1,0,0,1,0,0,0);
+        System.out.println(a1.getEndpoint());
+        System.out.println(a2.getEndpoint());
+        System.out.println(a1.getEndpoint().equals(a2.getEndpoint()));
     }
 }

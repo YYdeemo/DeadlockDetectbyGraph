@@ -164,8 +164,8 @@ public class CmpFile {
     }
 
     //TEST
-    public static void Main(String[] args) {
-        String filepath = "./src/test/test_ctp.txt";
+    public static void main(String[] args) {
+        String filepath = "./src/test/fixtures/test3.txt";
         LinkedList<String[]> ctp = getCTPFromFile(filepath);
         System.out.println(ctp.size());
     }

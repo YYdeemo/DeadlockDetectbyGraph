@@ -123,15 +123,15 @@ public class SMTSolver {
                 }
                 if (operation.rank > 0) {
                     if (operation.isSend()) {
-                        int rank = program.sendqs.get(operation.getHashCode()).indexOf(operation);
+                        int rank = program.sendqs.get(operation.getEndpoint()).indexOf(operation);
                         if (rank > 1) {
-                            Operation predOp = program.sendqs.get(operation.getHashCode()).get(rank - 1);
+                            Operation predOp = program.sendqs.get(operation.getEndpoint()).get(rank - 1);
                             solver.add(mkNonOvertacking(predOp, operation));
                         }
                     } else {
-                        int rank = program.recvqs.get(operation.getHashCode()).indexOf(operation);
+                        int rank = program.recvqs.get(operation.getEndpoint()).indexOf(operation);
                         if (rank > 1) {
-                            Operation preOp = program.recvqs.get(operation.getHashCode()).get(rank - 1);
+                            Operation preOp = program.recvqs.get(operation.getEndpoint()).get(rank - 1);
                             solver.add(mkNonOvertacking(preOp, operation));
                         }
                     }

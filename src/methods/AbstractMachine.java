@@ -2,7 +2,7 @@ package methods;
 
 import constant.OPTypeEnum;
 import constant.Status;
-import javafx.util.Pair;
+import constant.Pair;
 import syntax.*;
 import syntax.Process;
 
@@ -136,28 +136,28 @@ public class AbstractMachine {
     }
 
     private void appendOpInShape(Operation operation) {
-        if (!recvInShape.containsKey(operation.getHashCode())) recvInShape.put(operation.getHashCode(), 0);
-        if (!sendInShape.containsKey(operation.getHashCode())) sendInShape.put(operation.getHashCode(), 0);
+        if (!recvInShape.containsKey(operation.getEndpoint())) recvInShape.put(operation.getEndpoint(), 0);
+        if (!sendInShape.containsKey(operation.getEndpoint())) sendInShape.put(operation.getEndpoint(), 0);
         Pair<Integer, Integer> pair = new Pair<>(operation.dst, -1);
         if (!sendInShape.containsKey(pair)) sendInShape.put(pair, 0);
         if (!recvInShape.containsKey(pair)) recvInShape.put(pair, 0);
 
         if (operation.isSend()) {
-            sendInShape.put(operation.getHashCode(), sendInShape.get(operation.getHashCode()) + 1);
+            sendInShape.put(operation.getEndpoint(), sendInShape.get(operation.getEndpoint()) + 1);
             sendInShape.put(pair, sendInShape.get(pair) + 1);
 
             if (operation.isCsecOperation) {
                 int i = ((CsecOperation) operation).OperationList.size() - 1;
-                sendInShape.put(operation.getHashCode(), sendInShape.get(operation.getHashCode()) + i);
+                sendInShape.put(operation.getEndpoint(), sendInShape.get(operation.getEndpoint()) + i);
                 sendInShape.put(pair, sendInShape.get(pair) + i);
             }
 
         } else if (operation.isRecv()) {
-            recvInShape.put(operation.getHashCode(), recvInShape.get(operation.getHashCode()) + 1);
+            recvInShape.put(operation.getEndpoint(), recvInShape.get(operation.getEndpoint()) + 1);
 
             if (operation.isCsecOperation) {
                 int i = ((CsecOperation) operation).OperationList.size() - 1;
-                recvInShape.put(operation.getHashCode(), recvInShape.get(operation.getHashCode()) + i);
+                recvInShape.put(operation.getEndpoint(), recvInShape.get(operation.getEndpoint()) + i);
             }
         }
     }
@@ -166,15 +166,15 @@ public class AbstractMachine {
         Pair<Integer,Integer> pair = new Pair<>(operation.dst,-1);
         if (operation.isRecv()){
             if (operation.src!=-1){
-                return sendInShape.get(operation.getHashCode())>recvInShape.get(operation.getHashCode())
-                        && sendInShape.get(pair) > recvInShape.get(pair)+recvInShape.get(operation.getHashCode());
+                return sendInShape.get(operation.getEndpoint())>recvInShape.get(operation.getEndpoint())
+                        && sendInShape.get(pair) > recvInShape.get(pair)+recvInShape.get(operation.getEndpoint());
             }else {
                 int totalRecvNum = 0;
                 for (int i = -1; i < program.getSize();i++){
                     Pair<Integer,Integer> pair1 = new Pair<>(operation.dst,i);
                     if (recvInShape.containsKey(pair1)) totalRecvNum = totalRecvNum+recvInShape.get(pair1);
                 }
-                return sendInShape.get(operation.getHashCode()) > totalRecvNum;
+                return sendInShape.get(operation.getEndpoint()) > totalRecvNum;
             }
         }else if (operation.isSend()){
             int totalRecvNum = 0;
@@ -182,7 +182,7 @@ public class AbstractMachine {
                 Pair<Integer,Integer> pair1 = new Pair<>(operation.dst,i);
                 if (recvInShape.containsKey(pair1)) totalRecvNum = totalRecvNum+recvInShape.get(pair1);
             }
-            return sendInShape.get(operation.getHashCode()) < totalRecvNum;
+            return sendInShape.get(operation.getEndpoint()) < totalRecvNum;
         }
 
         return false;
@@ -218,8 +218,8 @@ public class AbstractMachine {
     boolean mayDeadlock(Operation operation){
         if (operation.isRecv()){
             Pair<Integer,Integer> pair = new Pair<>(operation.dst, -1);
-            int sendNum = sendInShape.get(operation.getHashCode());
-            int recvNum = recvInShape.get(operation.getHashCode());
+            int sendNum = sendInShape.get(operation.getEndpoint());
+            int recvNum = recvInShape.get(operation.getEndpoint());
             if (operation.src!=-1) recvNum += recvInShape.get(pair);
             return sendNum<=recvNum;
         }else if (operation.isSend()){
@@ -229,7 +229,7 @@ public class AbstractMachine {
                 Pair<Integer,Integer> pair1 = new Pair<>(operation.dst,i);
                 if (sendInShape.containsKey(pair1)) sendNum = sendNum+sendInShape.get(pair1);
             }
-            int recvNum = recvInShape.get(operation.getHashCode());
+            int recvNum = recvInShape.get(operation.getEndpoint());
             if (operation.src!=-1) recvNum += recvInShape.get(pair);
             return recvNum <= sendNum;
         }

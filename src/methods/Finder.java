@@ -89,11 +89,11 @@ public class Finder {
     }
 
     public static void main(String[] args) {
-        String filename = "((diffusion2d(4|8|16|32))|(monte(8|16|32|64))|(heat(8|16|32|64))|(floyd(8|16|32|64|128))|(ge(8|16|32|64|128))|(integrate(8|10|16|32|64|128))|(is(256|64|128)))";
+//        String filename = "((diffusion2d(4|8|16|32))|(monte(8|16|32|64))|(heat(8|16|32|64))|(floyd(8|16|32|64|128))|(ge(8|16|32|64|128))|(integrate(8|10|16|32|64|128))|(is(256|64|128)))";
 //        String filename = "((diffusion2d(4|8|16|32))|(monte(8|16|32|64))|(heat(8|16|32|64))|(floyd(8|16|32|64|128))|(is(256|64|128)))";
 //        String regex = "((diffusion2d(4|8|16|32|64))|(heat(8|16|32|64))|(monte(8|16|32|64))).txt";
 //        String filename = "((diffusion2d(4|8|16))|(heat(8|16|32|64))|(monte(8|16)))";
-//        String filename = "(test3)";
+        String filename = "(test3)";
         Finder finder = new Finder(filename, false, true);
 //        finder.find();
         finder.findNew();

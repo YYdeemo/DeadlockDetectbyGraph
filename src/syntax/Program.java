@@ -1,8 +1,7 @@
 package syntax;
 
 import constant.OPTypeEnum;
-import javafx.util.Pair;
-import methods.HBRelations;
+import constant.Pair;
 import methods.MatchOrder;
 import methods.MatchPairs;
 import prework.CmpFile;
@@ -106,13 +105,13 @@ public class Program implements Cloneable{
 
     void appendOpToQS(Operation operation) {
         if (operation.isSend()) {
-            if (!sendqs.containsKey(operation.getHashCode()))
-                sendqs.put(operation.getHashCode(), new LinkedList<>());
-            sendqs.get(operation.getHashCode()).add(operation);
+            if (!sendqs.containsKey(operation.getEndpoint()))
+                sendqs.put(operation.getEndpoint(), new LinkedList<>());
+            sendqs.get(operation.getEndpoint()).add(operation);
         } else if (operation.isRecv() || operation.isIRecv()) {
-            if (!recvqs.containsKey(operation.getHashCode()))
-                recvqs.put(operation.getHashCode(), new LinkedList<>());
-            recvqs.get(operation.getHashCode()).add(operation);
+            if (!recvqs.containsKey(operation.getEndpoint()))
+                recvqs.put(operation.getEndpoint(), new LinkedList<>());
+            recvqs.get(operation.getEndpoint()).add(operation);
         }
     }
 
@@ -128,10 +127,10 @@ public class Program implements Cloneable{
                     process.ops.get(operation.reqID).Nearstwait = operation;
                 }
                 if (operation.isRecv()) {
-                    operation.index = recvqs.get(operation.getHashCode()).indexOf(operation);
+                    operation.index = recvqs.get(operation.getEndpoint()).indexOf(operation);
                 }
                 if (operation.isSend()) {
-                    operation.index = sendqs.get(operation.getHashCode()).indexOf(operation);
+                    operation.index = sendqs.get(operation.getEndpoint()).indexOf(operation);
                 }
             }
             indx += 2;
@@ -241,7 +240,7 @@ public class Program implements Cloneable{
     }
 
     public static void main(String[] args) {
-        Program program = new Program("./src/test/fixtures/combine/myTest.txt");
+        Program program = new Program("./src/test/fixtures/test3.txt");
 
         program.printALLOperations();
 //        program.printMatchPairs();
