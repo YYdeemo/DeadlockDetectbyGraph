@@ -16,7 +16,7 @@ public class Operation implements Comparable,Cloneable{
     public int dst;//destination
     public int tag;//tag
     public int group;//group
-    public int reqID;//the req action's idx
+    public int reqID;//the req action's idx, if this op is collective operation, the req is number of element in buffer
     public int root;//collective's root
     public Operation req;//for a wait ;the req is an operation which is witnessed by the wait
     public OPTypeEnum type;//the type is num : "send", "recv", "wait", "barrier", "bot"
@@ -50,6 +50,13 @@ public class Operation implements Comparable,Cloneable{
         this.rank = rank;
         this.indx = indx;
         this.proc = proc;
+    }
+
+    public Operation(OPTypeEnum type, Operation req){
+        if(type==OPTypeEnum.WAIT){
+            this.type = type;
+            this.req = req;
+        }
     }
 
     public boolean isSend() {

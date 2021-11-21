@@ -20,7 +20,7 @@ import java.util.*;
  *       3.construct the partial order based on happens-before relation
  */
 public class Program implements Cloneable{
-    public ArrayList<LinkedList<Operation>> operations;
+//    public ArrayList<LinkedList<Operation>> operations;
 
     public ArrayList<Process> processes;
     public Hashtable<Operation, LinkedList<Operation>> matchTables;//all matches like: <r,list<s>>
