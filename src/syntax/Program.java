@@ -28,8 +28,8 @@ public class Program implements Cloneable{
 
     public Hashtable<Operation, Set<Operation>> matchOrderTables;
 
-    public Hashtable<Pair<Integer, Integer>, LinkedList<Operation>> sendqs;
-    public Hashtable<Pair<Integer, Integer>, LinkedList<Operation>> recvqs;
+    public Hashtable<Object, LinkedList<Operation>> sendqs;
+    public Hashtable<Object, LinkedList<Operation>> recvqs;
 
     public Hashtable<Integer, LinkedList<Operation>> groups;
 
@@ -243,6 +243,6 @@ public class Program implements Cloneable{
         Program program = new Program("./src/test/fixtures/test3.txt");
 
         program.printALLOperations();
-//        program.printMatchPairs();
+        program.printMatchPairs();
     }
 }

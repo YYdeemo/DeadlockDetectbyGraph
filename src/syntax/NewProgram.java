@@ -192,14 +192,9 @@ public class NewProgram extends Program implements Cloneable{
         return newProgram;
     }
 
-    public static void main(String[] args) throws CloneNotSupportedException {
+    public static void main(String[] args) {
         NewProgram newProgram = new NewProgram("./src/test/fixtures/diffusion2d4.txt", false);
         System.out.println(newProgram.csecOpsTables.size());
-        NewProgram newProgram1 = (NewProgram) newProgram.clone();
-        System.out.println(newProgram1.csecOpsTables.size());
-        newProgram.csecOpsTables.clear();
-        System.out.println(newProgram.csecOpsTables.size());
-        System.out.println(newProgram1.csecOpsTables.size());
 
     }
 }

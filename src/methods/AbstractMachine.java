@@ -18,8 +18,8 @@ public class AbstractMachine {
 
     int tracker[];
     int indicator[];
-    Hashtable<Pair<Integer, Integer>, Integer> recvInShape;
-    Hashtable<Pair<Integer, Integer>, Integer> sendInShape;
+    Hashtable<Object, Integer> recvInShape;
+    Hashtable<Object, Integer> sendInShape;
 
     boolean deadlockFound;
 
@@ -35,8 +35,8 @@ public class AbstractMachine {
         //init
         tracker = new int[program.getSize()];
         indicator = new int[program.getSize()];
-        recvInShape = new Hashtable<Pair<Integer, Integer>, Integer>();
-        sendInShape = new Hashtable<Pair<Integer, Integer>, Integer>();
+        recvInShape = new Hashtable<>();
+        sendInShape = new Hashtable<>();
         //initialize each indicator of process
         for (int i = 0; i < program.getSize(); i++) {
             if (!this.pattern.containsKey(i)) {

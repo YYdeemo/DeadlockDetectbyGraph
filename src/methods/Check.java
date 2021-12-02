@@ -4,7 +4,6 @@ import com.microsoft.z3.Model;
 import constant.Status;
 import smt.SMTSolver;
 import smt.SMTSolverNew;
-import smt.SMTSolver_2;
 import syntax.*;
 import syntax.Process;
 

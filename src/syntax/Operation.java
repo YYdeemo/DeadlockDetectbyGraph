@@ -1,7 +1,9 @@
 package syntax;
 
+import constant.Constants;
 import constant.OPTypeEnum;
 import constant.Pair;
+import constant.Triple;
 //import javafx.util.Pair;
 
 /**
@@ -24,9 +26,9 @@ public class Operation implements Comparable,Cloneable{
 //    SendModeEnum sendmode;//the type is num: "ssend", "rsend", "bsend", "tsend"
     public boolean isCsecOperation = false;
 
-    public Operation(OPTypeEnum type, int index, int proc, int src, int dst, int tag, int group, int reqID) {
+    public Operation(OPTypeEnum type, int rank, int proc, int src, int dst, int tag, int group, int reqID) {
         this.type = type;
-        this.index = index;
+        this.rank = rank;
         this.proc = proc;
         this.src = src;
         this.dst = dst;
@@ -37,9 +39,9 @@ public class Operation implements Comparable,Cloneable{
     }
 
     // 5 features collective except barrier
-    public Operation(OPTypeEnum type, int index, int root, int proc, int group) {//collective operation;
+    public Operation(OPTypeEnum type, int rank, int root, int proc, int group) {//collective operation;
         this.type = type;
-        this.index = index;
+        this.rank = rank;
         this.root = root;
         this.proc = proc;
         this.group = group;
@@ -52,9 +54,11 @@ public class Operation implements Comparable,Cloneable{
         this.proc = proc;
     }
 
-    public Operation(OPTypeEnum type, Operation req){
+    public Operation(OPTypeEnum type,  int rank, int proc, Operation req){
         if(type==OPTypeEnum.WAIT){
             this.type = type;
+            this.rank = rank;
+            this.proc = proc;
             this.req = req;
         }
     }
@@ -86,17 +90,22 @@ public class Operation implements Comparable,Cloneable{
     public boolean isBot() { return (this.type == OPTypeEnum.BOT); }
 
     public String getStrInfo(){
-        return this.type+" "+this.proc+"_"+this.rank;
+        return this.type+" "+this.proc+"_"+this.indx;
     }
 
     public boolean isCsecOperation() {
         return isCsecOperation;
     }
 
-    public Pair<Integer, Integer> getEndpoint(){
-        //this hash code depends dst and src;
-        Pair<Integer, Integer> pair = new Pair<Integer,Integer>(this.dst, this.src);
-        return pair;
+    public Object getEndpoint(){
+        //this hash code depends dst and src; or it depends dst, src, and tag
+        if(this.tag == Constants.defultInt || this.tag == 0) {
+            Pair<Integer, Integer> pair = new Pair<Integer, Integer>(this.dst, this.src);
+            return pair;
+        }else{
+            Triple<Integer,Integer,Integer> triple = new Triple<>(this.dst,this.src,this.tag);
+            return triple;
+        }
     }
 
     @Override
@@ -109,15 +118,15 @@ public class Operation implements Comparable,Cloneable{
     @Override
     public String toString() {
         if (this.isRecv())
-            return this.type+" "+this.proc+" "+this.src+" "+this.tag+" "+this.rank;
+            return this.type+" "+this.indx+" "+this.proc+" "+this.src+" "+(this.tag==-999?"":this.tag)+" "+this.rank;
         else if(this.isSend())
-            return this.type+" "+this.proc+" "+this.dst+" "+this.tag+" "+this.rank;
+            return this.type+" "+this.indx+" "+this.proc+" "+this.dst+" "+(this.tag==-999?"":this.tag)+" "+this.rank;
         else if(this.isWait())
-            return this.type+" "+this.proc+" "+this.req.rank;
+            return this.type+" "+this.indx+" "+this.proc+" "+this.req.rank;
         else if(this.isBarrier())
-            return this.type+" "+this.proc+" "+this.group+" "+this.rank;
+            return this.type+" "+this.indx+" "+this.proc+" "+this.group+" "+this.rank;
         else
-            return this.type+" "+this.proc+"_"+this.root+" "+this.group+" "+this.rank;
+            return this.type+" "+this.indx+" "+this.proc+"_"+this.root+" "+this.group+" "+this.rank;
     }
 
     @Override
